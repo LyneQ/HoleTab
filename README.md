@@ -1,4 +1,3 @@
-```markdown
 # HoleTab
 A self-hosted, single-binary new-tab page server.  
 No Node.js, no extensions, no CGO — just one Go binary.
