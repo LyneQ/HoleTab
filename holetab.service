@@ -1,0 +1,24 @@
+[Unit]
+Description=HoleTab new tab page
+After=network.target
+
+[Service]
+Type=simple
+User=holetab
+Group=holetab
+
+ExecStart=/usr/local/bin/holetab --config /etc/holetab/config.toml
+Restart=on-failure
+RestartSec=5s
+
+WorkingDirectory=/var/lib/holetab
+StateDirectory=holetab
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/holetab
+
+[Install]
+WantedBy=multi-user.target
