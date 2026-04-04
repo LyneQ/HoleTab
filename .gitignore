@@ -9,10 +9,11 @@
 *_templ.go
 
 # IDE
-.idea/workspace.xml
-.idea/go.imports.xml
-.idea/dataSources/
-.idea/dataSources.local.xml
+.idea/
+
+# DB
+*.db
+*.sqlite
 
 # OS
 .DS_Store
