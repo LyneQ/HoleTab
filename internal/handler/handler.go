@@ -83,11 +83,15 @@ func (h *Handler) UpdateLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	img := r.FormValue("img")
+	if img == "" {
+		img = favicon.GetFaviconURL(r.FormValue("href"))
+	}
 	link := model.Link{
 		ID:   id,
 		Name: r.FormValue("name"),
 		Href: r.FormValue("href"),
-		Img:  favicon.GetFaviconURL(r.FormValue("href")),
+		Img:  img,
 	}
 
 	// Preserve the existing position by loading the old record first.

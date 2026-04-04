@@ -21,17 +21,38 @@ function closeAddModal() {
   document.getElementById('add-modal').classList.remove('open');
 }
 
-// Close modal after HTMX swaps the link grid (successful add).
+// Close modals after HTMX swaps the link grid (successful add or edit).
 document.addEventListener('htmx:afterSwap', function (e) {
   if (e.detail.target && e.detail.target.id === 'link-grid') {
     closeAddModal();
+    closeEditModal();
   }
 });
 
-// Close modal when clicking the backdrop itself.
+// Close modals when clicking their own backdrop.
 document.getElementById('add-modal').addEventListener('click', function (e) {
   if (e.target === this) closeAddModal();
 });
+document.getElementById('edit-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeEditModal();
+});
+
+/* ── Edit-link modal ────────────────────────────────────── */
+function openEditModal(id, name, href, img) {
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-href').value = href;
+  document.getElementById('edit-img').value  = img || '';
+
+  var form = document.getElementById('edit-form');
+  form.setAttribute('hx-put', '/links/' + id);
+  htmx.process(form); // re-process so HTMX picks up the updated hx-put URL
+
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
 
 /* ── Three-dot card menu ────────────────────────────────── */
 function closeAllMenus() {
@@ -50,6 +71,15 @@ document.addEventListener('click', function (e) {
     var wasOpen = menu.classList.contains('open');
     closeAllMenus();
     if (!wasOpen) menu.classList.add('open');
+    return;
+  }
+
+  // Open edit modal when clicking the Edit menu item.
+  var editBtn = e.target.closest('[data-action="edit"]');
+  if (editBtn) {
+    var d = editBtn.dataset;
+    closeAllMenus();
+    openEditModal(d.id, d.name, d.href, d.img);
     return;
   }
 

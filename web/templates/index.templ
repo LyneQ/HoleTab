@@ -17,6 +17,7 @@ templ Index(links []model.Link) {
 			@SearchBar()
 		</div>
 		@AddForm()
+		@EditModal()
 	}
 }
 
@@ -45,19 +46,28 @@ templ LinkCard(link model.Link) {
 		>⋯</button>
 		<div class="card-menu" id={ fmt.Sprintf("menu-%d", link.ID) }>
 			<button
+				type="button"
+				class="menu-item"
+				data-action="edit"
+				data-id={ fmt.Sprintf("%d", link.ID) }
+				data-name={ link.Name }
+				data-href={ link.Href }
+				data-img={ link.Img }
+			>✎ Edit</button>
+			<button
 				hx-get={ fmt.Sprintf("/links/%d/move?dir=up", link.ID) }
 				hx-target="#link-grid"
 				hx-swap="outerHTML"
 				class="menu-item"
-				title="Move up"
-			>↑ Move up</button>
+				title="Move left"
+			>← Move left</button>
 			<button
 				hx-get={ fmt.Sprintf("/links/%d/move?dir=down", link.ID) }
 				hx-target="#link-grid"
 				hx-swap="outerHTML"
 				class="menu-item"
-				title="Move down"
-			>↓ Move down</button>
+				title="Move right"
+			>→ Move right</button>
 			<button
 				hx-delete={ fmt.Sprintf("/links/%d", link.ID) }
 				hx-target="#link-grid"
@@ -102,6 +112,37 @@ templ SearchBar() {
 			</svg>
 		</button>
 	</form>
+}
+
+// EditModal renders the glass modal for editing an existing link.
+// JS populates its fields and sets hx-put to the correct /links/{id} path before opening.
+templ EditModal() {
+	<div id="edit-modal" class="modal-backdrop">
+		<div class="modal-card" role="dialog" aria-modal="true" aria-label="Edit link">
+			<button class="modal-close" onclick="closeEditModal()" type="button" title="Close">
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			</button>
+			<h2 class="modal-title">Edit link</h2>
+			<form
+				id="edit-form"
+				hx-put="/links/0"
+				hx-target="#link-grid"
+				hx-swap="outerHTML"
+				class="modal-form"
+			>
+				<input type="text" id="edit-name" name="name" placeholder="Name" required class="modal-input"/>
+				<input type="url" id="edit-href" name="href" placeholder="https://…" required class="modal-input"/>
+				<input type="url" id="edit-img" name="img" placeholder="Icon URL (leave empty to auto-generate)" class="modal-input"/>
+				<div class="modal-actions">
+					<button type="button" class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+					<button type="submit" class="btn-primary">Save</button>
+				</div>
+			</form>
+		</div>
+	</div>
 }
 
 // AddForm renders the glass modal overlay for adding a new link.
