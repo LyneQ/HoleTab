@@ -9,6 +9,7 @@ import (
 templ Index(links []model.Link) {
 	@Layout("HoleTab") {
 		<main class="container">
+			@SearchBar()
 			@LinkGrid(links)
 			@AddForm()
 		</main>
@@ -64,6 +65,26 @@ templ LinkCard(link model.Link) {
 			>✕</button>
 		</div>
 	</div>
+}
+
+// SearchBar renders the search form with engine selector.
+// On submit HTMX posts to /search; the server replies with HX-Redirect to the engine URL.
+templ SearchBar() {
+	<form
+		hx-post="/search"
+		hx-target="body"
+		hx-swap="none"
+		class="search-bar"
+	>
+		<input type="text" name="q" placeholder="Search…" required class="input search-input" autocomplete="off"/>
+		<select name="engine" class="input select">
+			<option value="google">Google</option>
+			<option value="duckduckgo">DuckDuckGo</option>
+			<option value="bing">Bing</option>
+			<option value="brave">Brave</option>
+		</select>
+		<button type="submit" class="btn-primary">Search</button>
+	</form>
 }
 
 // AddForm renders the inline form for adding a new link.

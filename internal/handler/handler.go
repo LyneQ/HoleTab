@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +26,7 @@ func New(database *bbolt.DB) http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/", h.Index)
+	r.Post("/search", h.Search)
 	r.Post("/links", h.AddLink)
 	r.Put("/links/{id}", h.UpdateLink)
 	r.Delete("/links/{id}", h.DeleteLink)
@@ -145,6 +147,31 @@ func (h *Handler) MoveLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderGrid(w, r)
+}
+
+// Search handles POST /search — builds the engine search URL and redirects via HX-Redirect.
+func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	q := url.QueryEscape(r.FormValue("q"))
+
+	var searchURL string
+	switch r.FormValue("engine") {
+	case "duckduckgo":
+		searchURL = "https://duckduckgo.com/?q=" + q
+	case "bing":
+		searchURL = "https://www.bing.com/search?q=" + q
+	case "brave":
+		searchURL = "https://search.brave.com/search?q=" + q
+	default:
+		searchURL = "https://www.google.com/search?q=" + q
+	}
+
+	w.Header().Set("HX-Redirect", searchURL)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // renderGrid is a helper that fetches the current link list and renders the
