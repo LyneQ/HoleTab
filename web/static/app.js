@@ -12,6 +12,24 @@
   setInterval(tick, 1000);
 })();
 
+/* ── Search engine preference ───────────────────────────── */
+(function () {
+  var KEY = 'preferred-search-engine';
+  var sel = document.getElementById('search-engine-select');
+  if (!sel) return;
+
+  var saved = localStorage.getItem(KEY);
+  if (!saved) {
+    saved = 'google';
+    localStorage.setItem(KEY, saved);
+  }
+  sel.value = saved;
+
+  sel.addEventListener('change', function () {
+    localStorage.setItem(KEY, sel.value);
+  });
+})();
+
 /* ── Add-link modal ─────────────────────────────────────── */
 function openAddModal() {
   document.getElementById('add-modal').classList.add('open');
