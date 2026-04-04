@@ -1,0 +1,82 @@
+package templates
+
+import (
+	"fmt"
+	"holetab/internal/model"
+)
+
+// Index renders the full new-tab page wrapped in Layout.
+templ Index(links []model.Link) {
+	@Layout("HoleTab") {
+		<main class="container">
+			@LinkGrid(links)
+			@AddForm()
+		</main>
+	}
+}
+
+// LinkGrid renders the grid of link cards. This is the HTMX swap target for
+// all mutating operations — it must keep the id="link-grid" attribute.
+templ LinkGrid(links []model.Link) {
+	<div id="link-grid" class="link-grid">
+		for _, link := range links {
+			@LinkCard(link)
+		}
+	</div>
+}
+
+// LinkCard renders a single bookmark card with edit/delete/move controls.
+templ LinkCard(link model.Link) {
+	<div class="link-card" id={ fmt.Sprintf("link-%d", link.ID) }>
+		<a href={ templ.SafeURL(link.Href) } target="_blank" rel="noopener noreferrer" class="link-anchor">
+			if link.Img != "" {
+				<img src={ link.Img } alt="" class="link-favicon"/>
+			} else {
+				<span class="link-favicon-placeholder"></span>
+			}
+			<span class="link-name">{ link.Name }</span>
+		</a>
+		<div class="link-actions">
+			<!-- Move up -->
+			<button
+				hx-get={ fmt.Sprintf("/links/%d/move?dir=up", link.ID) }
+				hx-target="#link-grid"
+				hx-swap="outerHTML"
+				class="btn-icon"
+				title="Move up"
+			>↑</button>
+			<!-- Move down -->
+			<button
+				hx-get={ fmt.Sprintf("/links/%d/move?dir=down", link.ID) }
+				hx-target="#link-grid"
+				hx-swap="outerHTML"
+				class="btn-icon"
+				title="Move down"
+			>↓</button>
+			<!-- Delete -->
+			<button
+				hx-delete={ fmt.Sprintf("/links/%d", link.ID) }
+				hx-target="#link-grid"
+				hx-swap="outerHTML"
+				hx-confirm="Delete this link?"
+				class="btn-icon btn-danger"
+				title="Delete"
+			>✕</button>
+		</div>
+	</div>
+}
+
+// AddForm renders the inline form for adding a new link.
+// On success HTMX replaces #link-grid with the updated fragment.
+templ AddForm() {
+	<form
+		hx-post="/links"
+		hx-target="#link-grid"
+		hx-swap="outerHTML"
+		class="add-form"
+	>
+		<input type="text" name="name" placeholder="Name" required class="input"/>
+		<input type="url" name="href" placeholder="https://…" required class="input"/>
+		<button type="submit" class="btn-primary">Add</button>
+	</form>
+}

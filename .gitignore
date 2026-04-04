@@ -1,0 +1,18 @@
+# Binary output
+/bin/
+
+# Go
+*.test
+*.out
+
+# templ generated files
+*_templ.go
+
+# IDE
+.idea/workspace.xml
+.idea/go.imports.xml
+.idea/dataSources/
+.idea/dataSources.local.xml
+
+# OS
+.DS_Store
