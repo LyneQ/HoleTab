@@ -13,6 +13,7 @@ RestartSec=5s
 
 WorkingDirectory=/var/lib/holetab
 StateDirectory=holetab
+ReadWritePaths=/var/lib/holetab /etc/holetab
 
 NoNewPrivileges=true
 ProtectSystem=strict

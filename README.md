@@ -32,7 +32,11 @@ make build
 sudo ./install.sh
 ```
 
-`install.sh` installs the binary to `/usr/local/bin/`, copies the config to `/etc/holetab/config.toml` and enables the service at startup.
+`install.sh`: 
+- installs the binary to `/usr/local/bin/`,
+- copies the config to `/etc/holetab/config.toml`
+- data base for the saved links is created in `/var/lib/holetab/holetab.db`,
+- enables the service at startup.
 
 
 ## Update

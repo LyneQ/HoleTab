@@ -36,26 +36,28 @@ type DatabaseConfig struct {
 
 // LoadConfig reads config.toml from ~/.config/holetab/config.toml.
 // If the file does not exist, it creates the directory and writes a default config.
-func LoadConfig() (*Config, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
+func LoadConfig(path string) (*Config, error) {
+	if path == "" {
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return nil, err
+		}
+		path = filepath.Join(configDir, "holetab", "config.toml")
 	}
-	dir := filepath.Join(configDir, "holetab")
-	filename := filepath.Join(dir, "config.toml")
 
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
+	dir := filepath.Dir(path)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, err
 		}
-		log.Printf("config.toml not found — writing default config to %s", filename)
-		if err := os.WriteFile(filename, []byte(defaultConfigTOML()), 0644); err != nil {
+		log.Printf("config.toml not found — writing default config to %s", path)
+		if err := os.WriteFile(path, []byte(defaultConfigTOML()), 0644); err != nil {
 			return nil, err
 		}
 	}
 
 	var cfg Config
-	if _, err := toml.DecodeFile(filename, &cfg); err != nil {
+	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return nil, err
 	}
 	if cfg.Database.Path == "" {

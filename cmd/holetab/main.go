@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/fs"
 	"log"
 	"net/http"
@@ -15,7 +16,10 @@ import (
 
 func main() {
 	// 1. Load (or create) configuration.
-	cfg, err := config.LoadConfig()
+	configPath := flag.String("config", "", "path to config file")
+	flag.Parse()
+
+	cfg, err := config.LoadConfig(*configPath)
 	if err != nil {
 		log.Fatalf("config: %v", err)
 	}
