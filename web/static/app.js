@@ -72,6 +72,61 @@ function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('open');
 }
 
+/* ── Settings ───────────────────────────────────────────── */
+(function () {
+  var KEY = 'holetab-settings';
+  var DEFAULTS = { autofocusSearch: false, openLinksNewTab: true };
+
+  function load() {
+    try {
+      var s = localStorage.getItem(KEY);
+      return s ? Object.assign({}, DEFAULTS, JSON.parse(s)) : Object.assign({}, DEFAULTS);
+    } catch (e) { return Object.assign({}, DEFAULTS); }
+  }
+
+  function save(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+
+  function applyLinkTargets(newTab) {
+    document.querySelectorAll('.link-anchor').forEach(function (a) {
+      if (newTab) { a.setAttribute('target', '_blank'); }
+      else { a.removeAttribute('target'); }
+    });
+  }
+
+  var settings = load();
+
+  if (settings.autofocusSearch) {
+    var inp = document.querySelector('.search-input');
+    if (inp) inp.focus();
+  }
+  applyLinkTargets(settings.openLinksNewTab);
+
+  window.openSettingsModal = function () {
+    document.getElementById('setting-autofocus').checked = settings.autofocusSearch;
+    document.getElementById('setting-new-tab').checked   = settings.openLinksNewTab;
+    document.getElementById('settings-modal').classList.add('open');
+  };
+
+  window.closeSettingsModal = function () {
+    document.getElementById('settings-modal').classList.remove('open');
+  };
+
+  document.getElementById('settings-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeSettingsModal();
+  });
+
+  document.getElementById('setting-autofocus').addEventListener('change', function () {
+    settings.autofocusSearch = this.checked;
+    save(settings);
+  });
+
+  document.getElementById('setting-new-tab').addEventListener('change', function () {
+    settings.openLinksNewTab = this.checked;
+    save(settings);
+    applyLinkTargets(settings.openLinksNewTab);
+  });
+})();
+
 /* ── Three-dot card menu ────────────────────────────────── */
 function closeAllMenus() {
   document.querySelectorAll('.card-menu.open').forEach(function (m) {
