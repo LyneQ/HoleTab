@@ -72,10 +72,83 @@ function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('open');
 }
 
+/* ── Latency ping ───────────────────────────────────────── */
+(function () {
+  var TARGETS = {
+    cloudflare: 'https://www.cloudflare.com/cdn-cgi/trace',
+    google:     'https://connectivitycheck.gstatic.com/generate_204'
+  };
+
+  var badge  = document.getElementById('latency-badge');
+  var handle = null;
+  var active = false;
+
+  function colorClass(ms) {
+    return ms < 80 ? 'latency-good' : ms < 200 ? 'latency-mid' : 'latency-bad';
+  }
+
+  function ping(target) {
+    var url = (TARGETS[target] || TARGETS.cloudflare) + '?_=' + Date.now();
+    var t0  = performance.now();
+    fetch(url, { method: 'GET', cache: 'no-store', mode: 'no-cors' })
+      .then(function () {
+        var ms = Math.round(performance.now() - t0);
+        badge.textContent = ms + ' ms';
+        badge.className   = 'latency-badge ' + colorClass(ms);
+      })
+      .catch(function () {
+        badge.textContent = '-- ms';
+        badge.className   = 'latency-badge latency-bad';
+      });
+  }
+
+  function startLoop(target) {
+    if (handle) return;
+    ping(target);
+    handle = setInterval(function () { ping(target); }, 5000);
+  }
+
+  function stopLoop() {
+    clearInterval(handle);
+    handle = null;
+  }
+
+  window.latencyControl = {
+    _target: 'cloudflare',
+
+    enable: function (target) {
+      this._target = target || 'cloudflare';
+      badge.style.display = 'block';
+      active = true;
+      if (document.visibilityState !== 'hidden') startLoop(this._target);
+    },
+
+    disable: function () {
+      active = false;
+      stopLoop();
+      badge.style.display = 'none';
+    },
+
+    setTarget: function (target) {
+      this._target = target;
+      if (active) { stopLoop(); startLoop(target); }
+    }
+  };
+
+  document.addEventListener('visibilitychange', function () {
+    if (!active) return;
+    if (document.visibilityState === 'hidden') {
+      stopLoop();
+    } else {
+      startLoop(window.latencyControl._target);
+    }
+  });
+})();
+
 /* ── Settings ───────────────────────────────────────────── */
 (function () {
   var KEY = 'holetab-settings';
-  var DEFAULTS = { autofocusSearch: false, openLinksNewTab: true };
+  var DEFAULTS = { autofocusSearch: false, openLinksNewTab: true, showLatency: false, latencyTarget: 'cloudflare' };
 
   function load() {
     try {
@@ -85,6 +158,11 @@ function closeEditModal() {
   }
 
   function save(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+
+  function applyLatencyTargetRow(show) {
+    var row = document.getElementById('latency-target-row');
+    if (row) row.style.display = show ? '' : 'none';
+  }
 
   function applyLinkTargets(newTab) {
     document.querySelectorAll('.link-anchor').forEach(function (a) {
@@ -100,10 +178,15 @@ function closeEditModal() {
     if (inp) inp.focus();
   }
   applyLinkTargets(settings.openLinksNewTab);
+  applyLatencyTargetRow(settings.showLatency);
+  if (settings.showLatency) latencyControl.enable(settings.latencyTarget);
 
   window.openSettingsModal = function () {
-    document.getElementById('setting-autofocus').checked = settings.autofocusSearch;
-    document.getElementById('setting-new-tab').checked   = settings.openLinksNewTab;
+    document.getElementById('setting-autofocus').checked        = settings.autofocusSearch;
+    document.getElementById('setting-new-tab').checked          = settings.openLinksNewTab;
+    document.getElementById('setting-latency').checked          = settings.showLatency;
+    document.getElementById('setting-latency-target').value     = settings.latencyTarget;
+    applyLatencyTargetRow(settings.showLatency);
     document.getElementById('settings-modal').classList.add('open');
   };
 
@@ -124,6 +207,23 @@ function closeEditModal() {
     settings.openLinksNewTab = this.checked;
     save(settings);
     applyLinkTargets(settings.openLinksNewTab);
+  });
+
+  document.getElementById('setting-latency').addEventListener('change', function () {
+    settings.showLatency = this.checked;
+    save(settings);
+    applyLatencyTargetRow(settings.showLatency);
+    if (settings.showLatency) {
+      latencyControl.enable(settings.latencyTarget);
+    } else {
+      latencyControl.disable();
+    }
+  });
+
+  document.getElementById('setting-latency-target').addEventListener('change', function () {
+    settings.latencyTarget = this.value;
+    save(settings);
+    latencyControl.setTarget(settings.latencyTarget);
   });
 })();
 

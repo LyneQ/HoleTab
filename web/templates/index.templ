@@ -16,6 +16,7 @@ templ Index(links []model.Link) {
 			@LinkGrid(links)
 			@SearchBar()
 		</div>
+		<div id="latency-badge" class="latency-badge"></div>
 		<button class="settings-btn" onclick="openSettingsModal()" type="button" title="Settings">
 			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<circle cx="12" cy="12" r="3"></circle>
@@ -183,6 +184,26 @@ templ SettingsModal() {
 						<input type="checkbox" id="setting-new-tab"/>
 						<span class="toggle-track"></span>
 					</label>
+				</div>
+				<div class="setting-row">
+					<div class="setting-info">
+						<span class="setting-label">Show latency</span>
+						<span class="setting-desc">Display ping to an external server (only while page is open)</span>
+					</div>
+					<label class="toggle">
+						<input type="checkbox" id="setting-latency"/>
+						<span class="toggle-track"></span>
+					</label>
+				</div>
+				<div class="setting-row" id="latency-target-row">
+					<div class="setting-info">
+						<span class="setting-label">Ping target</span>
+						<span class="setting-desc">Server used to measure latency</span>
+					</div>
+					<select id="setting-latency-target" class="setting-select">
+						<option value="cloudflare">Cloudflare</option>
+						<option value="google">Google</option>
+					</select>
 				</div>
 			</div>
 		</div>
