@@ -14,6 +14,9 @@ import (
 	"holetab/web"
 )
 
+// devMode enables access to debug options like delete all links
+const devMode = false
+
 func main() {
 	// 1. Load (or create) configuration.
 	configPath := flag.String("config", "", "path to config file")
@@ -32,7 +35,7 @@ func main() {
 	defer database.Close()
 
 	// 3. Build the application router.
-	appRouter := handler.New(database)
+	appRouter := handler.New(database, cfg, devMode)
 
 	// 4. Mount static files from the embedded FS.
 	staticFS, err := fs.Sub(web.StaticFiles, "static")

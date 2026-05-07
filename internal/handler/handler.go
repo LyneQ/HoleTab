@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.etcd.io/bbolt"
 
+	"holetab/internal/bookmarks"
+	"holetab/internal/config"
 	"holetab/internal/db"
 	"holetab/internal/favicon"
 	"holetab/internal/model"
@@ -16,12 +18,18 @@ import (
 
 // Handler holds shared dependencies for all HTTP handlers.
 type Handler struct {
-	DB *bbolt.DB
+	DB      *bbolt.DB
+	Config  *config.Config
+	DevMode bool
 }
 
 // New returns a configured chi router wired to all application routes.
-func New(database *bbolt.DB) http.Handler {
-	h := &Handler{DB: database}
+func New(database *bbolt.DB, cfg *config.Config, devMode bool) http.Handler {
+	h := &Handler{
+		DB:      database,
+		Config:  cfg,
+		DevMode: devMode,
+	}
 
 	r := chi.NewRouter()
 
@@ -31,6 +39,12 @@ func New(database *bbolt.DB) http.Handler {
 	r.Put("/links/{id}", h.UpdateLink)
 	r.Delete("/links/{id}", h.DeleteLink)
 	r.Get("/links/{id}/move", h.MoveLink)
+	r.Get("/export", h.Export)
+	r.Post("/import", h.Import)
+
+	if h.DevMode {
+		r.Post("/reset", h.ResetLinks)
+	}
 
 	return r
 }
@@ -44,7 +58,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates.Index(links).Render(r.Context(), w); err != nil {
+	if err := templates.Index(links, h.DevMode).Render(r.Context(), w); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
@@ -196,4 +210,66 @@ func (h *Handler) renderGrid(w http.ResponseWriter, r *http.Request) {
 // parseID extracts and validates the {id} URL parameter.
 func parseID(r *http.Request) (uint64, error) {
 	return strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
+}
+
+// Export handles GET /export — triggers a download of the bookmarks in Netscape format.
+func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
+	links, err := db.GetAllLinks(h.DB)
+	if err != nil {
+		http.Error(w, "failed to load links", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="bookmarks.html"`)
+
+	if err := bookmarks.Export(w, links); err != nil {
+		http.Error(w, "export error", http.StatusInternalServerError)
+	}
+}
+
+// Import handles POST /import — parses the uploaded file and adds new bookmarks.
+func (h *Handler) Import(w http.ResponseWriter, r *http.Request) {
+	// 10 MB max
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("bookmarks")
+	if err != nil {
+		http.Error(w, "failed to get file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	links, err := bookmarks.Import(file)
+	if err != nil {
+		http.Error(w, "import error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := db.AddLinks(h.DB, links); err != nil {
+		http.Error(w, "failed to save links", http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect back to home to see the changes
+	w.Header().Set("HX-Redirect", "/")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// ResetLinks handles POST /reset — erases all links from the DB.
+func (h *Handler) ResetLinks(w http.ResponseWriter, r *http.Request) {
+	if !h.DevMode {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	if err := db.ResetLinks(h.DB); err != nil {
+		http.Error(w, "failed to reset links", http.StatusInternalServerError)
+		return
+	}
+
+	h.renderGrid(w, r)
 }

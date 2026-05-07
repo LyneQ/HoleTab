@@ -63,25 +63,36 @@ func GetAllLinks(db *bbolt.DB) ([]model.Link, error) {
 	return links, nil
 }
 
-// AddLink inserts a new link. The ID is assigned via NextSequence; Position is
-// set to len(existing)+1 so the new link appears last.
-func AddLink(db *bbolt.DB, link model.Link) error {
+// AddLinks inserts multiple links.
+func AddLinks(db *bbolt.DB, links []model.Link) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(bucketLinks))
+		nextPos := b.Stats().KeyN
 
-		id, err := b.NextSequence()
-		if err != nil {
-			return err
-		}
-		link.ID = id
-		link.Position = b.Stats().KeyN // append after existing entries
+		for _, link := range links {
+			id, err := b.NextSequence()
+			if err != nil {
+				return err
+			}
+			link.ID = id
+			link.Position = nextPos
+			nextPos++
 
-		v, err := json.Marshal(link)
-		if err != nil {
-			return err
+			v, err := json.Marshal(link)
+			if err != nil {
+				return err
+			}
+			if err := b.Put(itob(id), v); err != nil {
+				return err
+			}
 		}
-		return b.Put(itob(id), v)
+		return nil
 	})
+}
+
+// AddLink inserts a new link.
+func AddLink(db *bbolt.DB, link model.Link) error {
+	return AddLinks(db, []model.Link{link})
 }
 
 // UpdateLink overwrites an existing link identified by link.ID.
@@ -205,6 +216,17 @@ func recompactPositions(b *bbolt.Bucket) error {
 		}
 	}
 	return nil
+}
+
+// ResetLinks deletes all links from the database.
+func ResetLinks(db *bbolt.DB) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		if err := tx.DeleteBucket([]byte(bucketLinks)); err != nil {
+			return err
+		}
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketLinks))
+		return err
+	})
 }
 
 // itob encodes a uint64 as an 8-byte big-endian slice (bbolt key ordering).

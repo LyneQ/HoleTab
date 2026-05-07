@@ -6,7 +6,7 @@ import (
 )
 
 // Index renders the full new-tab page wrapped in Layout.
-templ Index(links []model.Link) {
+templ Index(links []model.Link, devMode bool) {
 	@Layout("HoleTab") {
 		<div class="orb orb-1"></div>
 		<div class="orb orb-2"></div>
@@ -25,7 +25,8 @@ templ Index(links []model.Link) {
 		</button>
 		@AddForm()
 		@EditModal()
-		@SettingsModal()
+
+		@SettingsModal(devMode)
 	}
 }
 
@@ -154,7 +155,7 @@ templ EditModal() {
 }
 
 // SettingsModal renders the settings panel with user preferences.
-templ SettingsModal() {
+templ SettingsModal(devMode bool) {
 	<div id="settings-modal" class="modal-backdrop">
 		<div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
 			<button class="modal-close" onclick="closeSettingsModal()" type="button" title="Close">
@@ -205,6 +206,39 @@ templ SettingsModal() {
 						<option value="google">Google</option>
 					</select>
 				</div>
+				<div class="setting-row">
+					<div class="setting-info">
+						<span class="setting-label">Backup</span>
+						<span class="setting-desc">Export all your bookmarks or import from a file</span>
+					</div>
+					<div style="display: flex; gap: 0.5rem;">
+						<a href="/export" class="btn-secondary" style="text-decoration: none; text-align: center; line-height: 2.5;" download>Export</a>
+						<form hx-post="/import" hx-encoding="multipart/form-data" style="margin: 0;">
+							<label class="btn-secondary" style="display: inline-block; line-height: 2.5; cursor: pointer;">
+								Import
+								<input type="file" name="bookmarks" style="display: none;" onchange="this.form.requestSubmit()"/>
+							</label>
+						</form>
+					</div>
+				</div>
+				if devMode {
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-label">Developer</span>
+							<span class="setting-desc">Dangerous actions for development</span>
+						</div>
+						<button
+							hx-post="/reset"
+							hx-target="#link-grid"
+							hx-swap="outerHTML"
+							hx-confirm="ARE YOU SURE? This will delete ALL your bookmarks!"
+							class="btn-secondary"
+							style="color: #ff4444; border-color: rgba(255, 68, 68, 0.2);"
+						>
+							Reset all links
+						</button>
+					</div>
+				}
 			</div>
 		</div>
 	</div>
