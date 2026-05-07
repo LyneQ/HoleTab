@@ -8,8 +8,7 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 ---
 
 ## 🟢 Phase 1: Core Enhancements (Short-term)
-- [ ] **Categories/Groups**: Organize links into sections or tabs instead of a single list.
-- [ ] **Import/Export**: Support for importing from HTML bookmark files and exporting to JSON for backups.
+- [x] **Import/Export**: Support for importing from HTML bookmark files and exporting to HTML bookmark (Netscape Bookmark File Format).
 - [ ] **Drag-and-Drop Reordering**: Replace "up/down" buttons with a modern drag-and-drop interface (using HTMX or lightweight JS).
 - [x] **Responsive Grid**: Improve the layout for mobile and tablet devices.
 
@@ -17,6 +16,7 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 - [ ] **Custom Favicons**: Allow uploading custom icons or choosing from a set of predefined icons when auto-resolution fails.
 - [ ] **Weather Widget**: A minimal, privacy-focused weather display (optional/configurable).
 - [ ] **Operating System Integration**: Support for Windows and macOS.
+- [ ] **Organise**: organise links into folders and support HTML bookmarks file folder structure.
 
 ## 🔵 Phase 3: Technical & Infrastructure (Long-term)
 - [ ] **Docker Support**: Provide a lightweight Scratch/Alpine-based Docker image.
