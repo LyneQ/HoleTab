@@ -1,607 +1,612 @@
 /* ── Reset ──────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-button, input, select { font-family: inherit; }
+*, *::before, *::after { box-sizing : border-box; margin : 0; padding : 0; }
+
+button, input, select { font-family : inherit; }
 
 /* ── Design tokens ──────────────────────────────────────── */
 :root {
-  --glass-bg:      rgba(255, 255, 255, 0.05);
-  --glass-border:  rgba(255, 255, 255, 0.08);
-  --glass-blur:    blur(12px);
-  --accent:        #8b5cf6;
-  --accent-dim:    rgba(139, 92, 246, 0.5);
-  --text:          rgba(255, 255, 255, 0.90);
-  --text-muted:    rgba(255, 255, 255, 0.40);
-  --danger:        #f87171;
+  --glass-bg     : rgba(255, 255, 255, 0.05);
+  --glass-border : rgba(255, 255, 255, 0.08);
+  --glass-blur   : blur(12px);
+  --accent       : #8b5cf6;
+  --accent-dim   : rgba(139, 92, 246, 0.5);
+  --text         : rgba(255, 255, 255, 0.90);
+  --text-muted   : rgba(255, 255, 255, 0.40);
+  --danger       : #f87171;
 }
 
 /* ── Body + dark gradient ───────────────────────────────── */
-html, body { height: 100%; }
+html, body { height : 100%; }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: linear-gradient(135deg, #0a0a0f 0%, #12121a 55%, #0d0d14 100%);
-  color: var(--text);
-  min-height: 100vh;
-  position: relative;
-  overflow: auto;
+  font-family : "Inter", system-ui, sans-serif;
+  background  : linear-gradient(135deg, #0a0a0f 0%, #12121a 55%, #0d0d14 100%);
+  color       : var(--text);
+  min-height  : 100vh;
+  position    : relative;
+  overflow    : auto;
 }
 
 /* ── Background orbs (CSS-only animation) ───────────────── */
 .orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.15;
-  pointer-events: none;
-  z-index: 0;
-  animation: orb-drift 14s ease-in-out infinite alternate;
+  position       : fixed;
+  border-radius  : 50%;
+  filter         : blur(90px);
+  opacity        : 0.15;
+  pointer-events : none;
+  z-index        : 0;
+  animation      : orb-drift 14s ease-in-out infinite alternate;
 }
 
 .orb-1 {
-  width: 640px; height: 640px;
-  background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
-  top: -180px; left: -120px;
-  animation-duration: 16s;
+  width              : 640px; height : 640px;
+  background         : radial-gradient(circle, #7c3aed 0%, transparent 70%);
+  top                : -180px; left : -120px;
+  animation-duration : 16s;
 }
 
 .orb-2 {
-  width: 520px; height: 520px;
-  background: radial-gradient(circle, #2563eb 0%, transparent 70%);
-  top: 15%; right: -120px;
-  animation-duration: 12s;
-  animation-delay: -5s;
+  width              : 520px; height : 520px;
+  background         : radial-gradient(circle, #2563eb 0%, transparent 70%);
+  top                : 15%; right : -120px;
+  animation-duration : 12s;
+  animation-delay    : -5s;
 }
 
 .orb-3 {
-  width: 420px; height: 420px;
-  background: radial-gradient(circle, #6d28d9 0%, transparent 70%);
-  bottom: -120px; left: 38%;
-  animation-duration: 18s;
-  animation-delay: -9s;
+  width              : 420px; height : 420px;
+  background         : radial-gradient(circle, #6d28d9 0%, transparent 70%);
+  bottom             : -120px; left : 38%;
+  animation-duration : 18s;
+  animation-delay    : -9s;
 }
 
 @keyframes orb-drift {
-  from { transform: translate(0,   0)   scale(1);    }
-  to   { transform: translate(28px, 18px) scale(1.07); }
+  from { transform : translate(0, 0) scale(1); }
+  to { transform : translate(28px, 18px) scale(1.07); }
 }
 
 /* ── Page layout ────────────────────────────────────────── */
 .page {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  min-height: 100vh;
-  padding: 2rem;
-  row-gap: 2.5rem;
+  position      : relative;
+  z-index       : 1;
+  display       : grid;
+  place-items   : center;
+  align-content : center;
+  min-height    : 100vh;
+  padding       : 2rem;
+  row-gap       : 2.5rem;
 }
 
 /* ── Clock ──────────────────────────────────────────────── */
 .clock {
-  font-size: clamp(3rem, 6vw, 5rem);
-  font-weight: 200;
-  letter-spacing: 0.06em;
-  opacity: 0.85;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  user-select: none;
+  font-size            : clamp(3rem, 6vw, 5rem);
+  font-weight          : 200;
+  letter-spacing       : 0.06em;
+  opacity              : 0.85;
+  color                : var(--text);
+  font-variant-numeric : tabular-nums;
+  line-height          : 1;
+  user-select          : none;
 }
 
 /* ── Link grid ──────────────────────────────────────────── */
 .link-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  max-width: 840px;
-  position: relative;
-  z-index: 2;
+  display         : flex;
+  flex-wrap       : wrap;
+  justify-content : center;
+  gap             : 1rem;
+  max-width       : 840px;
+  position        : relative;
+  z-index         : 2;
 }
 
 /* ── Link card (shared base) ────────────────────────────── */
 .link-card {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease, border-color 0.2s ease;
-  overflow: visible;
-  text-decoration: none;
-  color: inherit;
+  position                : relative;
+  width                   : 72px;
+  height                  : 72px;
+  background              : var(--glass-bg);
+  backdrop-filter         : var(--glass-blur);
+  -webkit-backdrop-filter : var(--glass-blur);
+  border                  : 1px solid var(--glass-border);
+  border-radius           : 16px;
+  display                 : flex;
+  flex-direction          : column;
+  align-items             : center;
+  justify-content         : center;
+  gap                     : 4px;
+  cursor                  : pointer;
+  transition              : transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease, border-color 0.2s ease;
+  overflow                : visible;
+  text-decoration         : none;
+  color                   : inherit;
 }
 
 .link-card:hover {
-  transform: scale(1.08);
-  filter: brightness(1.2);
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), 0 8px 32px rgba(0, 0, 0, 0.45);
+  transform    : scale(1.08);
+  filter       : brightness(1.2);
+  border-color : rgba(255, 255, 255, 0.18);
+  box-shadow   : 0 0 0 1px rgba(255, 255, 255, 0.15), 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
 /* ── Favicon ────────────────────────────────────────────── */
 .link-favicon {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  border-radius: 6px;
+  width         : 32px;
+  height        : 32px;
+  object-fit    : contain;
+  border-radius : 6px;
 }
 
 .link-favicon-placeholder {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.10);
-  border-radius: 6px;
+  width         : 32px;
+  height        : 32px;
+  background    : rgba(255, 255, 255, 0.10);
+  border-radius : 6px;
 }
 
 .link-name {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
-  text-align: center;
-  max-width: 64px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
+  font-size     : 11px;
+  color         : rgba(255, 255, 255, 0.65);
+  text-align    : center;
+  max-width     : 64px;
+  overflow      : hidden;
+  text-overflow : ellipsis;
+  white-space   : nowrap;
+  line-height   : 1.2;
 }
 
 .link-anchor {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  text-decoration: none;
-  color: inherit;
-  width: 100%;
-  height: 100%;
-  padding: 8px 4px;
+  display         : flex;
+  flex-direction  : column;
+  align-items     : center;
+  justify-content : center;
+  gap             : 5px;
+  text-decoration : none;
+  color           : inherit;
+  width           : 100%;
+  height          : 100%;
+  padding         : 8px 4px;
 }
 
 /* ── Three-dot menu button ──────────────────────────────── */
 .card-menu-btn {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  width: 22px;
-  height: 22px;
-  background: rgba(22, 22, 40, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  z-index: 10;
+  position        : absolute;
+  top             : -7px;
+  right           : -7px;
+  width           : 22px;
+  height          : 22px;
+  background      : rgba(22, 22, 40, 0.95);
+  border          : 1px solid rgba(255, 255, 255, 0.15);
+  border-radius   : 9999px;
+  color           : rgba(255, 255, 255, 0.65);
+  font-size       : 13px;
+  line-height     : 1;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  padding         : 0;
+  opacity         : 0;
+  transition      : opacity 0.15s ease;
+  z-index         : 10;
 }
 
-.link-card:hover .card-menu-btn { opacity: 1; }
-.card-menu-btn:hover { color: #fff; }
+.link-card:hover .card-menu-btn { opacity : 1; }
+
+.card-menu-btn:hover { color : #ffffff; }
 
 /* ── Card dropdown menu ─────────────────────────────────── */
 .card-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  background: rgba(18, 18, 32, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 10px;
-  padding: 4px;
-  display: none;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 126px;
-  z-index: 20;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  position                : absolute;
+  top                     : calc(100% + 6px);
+  right                   : 0;
+  background              : rgba(18, 18, 32, 0.96);
+  backdrop-filter         : blur(16px);
+  -webkit-backdrop-filter : blur(16px);
+  border                  : 1px solid rgba(255, 255, 255, 0.10);
+  border-radius           : 10px;
+  padding                 : 4px;
+  display                 : none;
+  flex-direction          : column;
+  gap                     : 2px;
+  min-width               : 126px;
+  z-index                 : 20;
+  box-shadow              : 0 8px 32px rgba(0, 0, 0, 0.55);
 }
 
-.card-menu.open { display: flex; }
+.card-menu.open { display : flex; }
 
 .menu-item {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.72);
-  border-radius: 6px;
-  padding: 7px 10px;
-  font-size: 12px;
-  text-align: left;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.12s ease, color 0.12s ease;
+  background    : transparent;
+  border        : none;
+  color         : rgba(255, 255, 255, 0.72);
+  border-radius : 6px;
+  padding       : 7px 10px;
+  font-size     : 12px;
+  text-align    : left;
+  cursor        : pointer;
+  white-space   : nowrap;
+  transition    : background 0.12s ease, color 0.12s ease;
 }
 
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background : rgba(255, 255, 255, 0.08);
+  color      : #ffffff;
 }
 
 .menu-item-danger:hover {
-  background: rgba(248, 113, 113, 0.12);
-  color: var(--danger);
+  background : rgba(248, 113, 113, 0.12);
+  color      : var(--danger);
 }
 
 /* ── Add tile ───────────────────────────────────────────── */
 .add-tile {
-  border: 1.5px dashed rgba(255, 255, 255, 0.20);
-  background: transparent;
+  border     : 1.5px dashed rgba(255, 255, 255, 0.20);
+  background : transparent;
 }
 
 .add-tile:hover {
-  border-color: rgba(255, 255, 255, 0.40);
-  background: rgba(255, 255, 255, 0.04);
-  filter: none;
-  transform: scale(1.05);
+  border-color : rgba(255, 255, 255, 0.40);
+  background   : rgba(255, 255, 255, 0.04);
+  filter       : none;
+  transform    : scale(1.05);
 }
 
 .add-tile-icon {
-  font-size: 26px;
-  font-weight: 300;
-  color: rgba(255, 255, 255, 0.45);
-  line-height: 1;
+  font-size   : 26px;
+  font-weight : 300;
+  color       : rgba(255, 255, 255, 0.45);
+  line-height : 1;
 }
 
-.add-tile .link-name { color: rgba(255, 255, 255, 0.38); }
+.add-tile .link-name { color : rgba(255, 255, 255, 0.38); }
 
 /* ── Search bar ─────────────────────────────────────────── */
 .search-bar {
-  display: flex;
-  align-items: center;
-  width: clamp(480px, 55vw, 720px);
-  height: 48px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 9999px;
-  overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  display                 : flex;
+  align-items             : center;
+  width                   : clamp(480px, 55vw, 720px);
+  max-width               : 85vw;
+  height                  : 48px;
+  background              : var(--glass-bg);
+  backdrop-filter         : var(--glass-blur);
+  -webkit-backdrop-filter : var(--glass-blur);
+  border                  : 1px solid var(--glass-border);
+  border-radius           : 9999px;
+  overflow                : hidden;
+  transition              : border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .search-bar:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  border-color : var(--accent);
+  box-shadow   : 0 0 0 2px var(--accent-dim);
 }
 
 .search-engine-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.82rem;
-  font-weight: 400;
-  padding: 0 1.75rem 0 1.1rem;
-  height: 100%;
-  cursor: pointer;
-  outline: none;
-  flex-shrink: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.35)' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 6px center;
+  appearance          : none;
+  -webkit-appearance  : none;
+  background          : transparent;
+  border              : none;
+  color               : rgba(255, 255, 255, 0.65);
+  font-size           : 0.82rem;
+  font-weight         : 400;
+  padding             : 0 1.75rem 0 1.1rem;
+  height              : 100%;
+  cursor              : pointer;
+  outline             : none;
+  flex-shrink         : 0;
+  background-image    : url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.35)' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat   : no-repeat;
+  background-position : right 6px center;
 }
 
 .search-engine-select option {
-  background: #1a1a2e;
-  color: #e2e8f0;
+  background : #1a1a2e;
+  color      : #e2e8f0;
 }
 
 .search-divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.10);
-  flex-shrink: 0;
+  width       : 1px;
+  height      : 24px;
+  background  : rgba(255, 255, 255, 0.10);
+  flex-shrink : 0;
 }
 
 .search-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 0.95rem;
-  padding: 0 0.875rem;
-  height: 100%;
-  outline: none;
-  min-width: 0;
+  flex       : 1;
+  background : transparent;
+  border     : none;
+  color      : var(--text);
+  font-size  : 0.95rem;
+  padding    : 0 0.875rem;
+  height     : 100%;
+  outline    : none;
+  min-width  : 0;
 }
 
-.search-input::placeholder { color: var(--text-muted); }
+.search-input::placeholder { color : var(--text-muted); }
 
 .search-submit {
-  background: var(--accent);
-  border: none;
-  color: #fff;
-  height: 100%;
-  width: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 0 9999px 9999px 0;
-  flex-shrink: 0;
-  transition: background 0.2s ease;
+  background      : var(--accent);
+  border          : none;
+  color           : #ffffff;
+  height          : 100%;
+  width           : 52px;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  cursor          : pointer;
+  border-radius   : 0 9999px 9999px 0;
+  flex-shrink     : 0;
+  transition      : background 0.2s ease;
 }
 
-.search-submit:hover { background: #7c3aed; }
+.search-submit:hover { background : #7c3aed; }
 
 /* ── Modal backdrop ─────────────────────────────────────── */
 .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.60);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: none;
-  place-items: center;
-  z-index: 100;
+  position                : fixed;
+  inset                   : 0;
+  background              : rgba(0, 0, 0, 0.60);
+  backdrop-filter         : blur(4px);
+  -webkit-backdrop-filter : blur(4px);
+  display                 : none;
+  place-items             : center;
+  z-index                 : 100;
 }
 
-.modal-backdrop.open { display: grid; }
+.modal-backdrop.open { display : grid; }
 
 /* ── Modal card ─────────────────────────────────────────── */
 .modal-card {
-  background: rgba(18, 18, 32, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 20px;
-  padding: 2rem;
-  width: min(420px, 90vw);
-  position: relative;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.60);
+  background              : rgba(18, 18, 32, 0.92);
+  backdrop-filter         : blur(20px);
+  -webkit-backdrop-filter : blur(20px);
+  border                  : 1px solid rgba(255, 255, 255, 0.10);
+  border-radius           : 20px;
+  padding                 : 2rem;
+  width                   : min(420px, 90vw);
+  position                : relative;
+  box-shadow              : 0 24px 80px rgba(0, 0, 0, 0.60);
 }
 
 .modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 28px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  position        : absolute;
+  top             : 1rem;
+  right           : 1rem;
+  width           : 28px;
+  height          : 28px;
+  background      : rgba(255, 255, 255, 0.06);
+  border          : 1px solid rgba(255, 255, 255, 0.10);
+  border-radius   : 9999px;
+  color           : rgba(255, 255, 255, 0.55);
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  transition      : background 0.15s ease, color 0.15s ease;
 }
 
 .modal-close:hover {
-  background: rgba(248, 113, 113, 0.15);
-  color: var(--danger);
+  background : rgba(248, 113, 113, 0.15);
+  color      : var(--danger);
 }
 
 .modal-title {
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.01em;
+  font-size      : 1.05rem;
+  font-weight    : 500;
+  color          : var(--text);
+  margin-bottom  : 1.5rem;
+  letter-spacing : 0.01em;
 }
 
 .modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display        : flex;
+  flex-direction : column;
+  gap            : 0.75rem;
 }
 
 .modal-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 0.9rem;
-  padding: 0.65rem 0.9rem;
-  outline: none;
-  width: 100%;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background    : rgba(255, 255, 255, 0.05);
+  border        : 1px solid rgba(255, 255, 255, 0.10);
+  border-radius : 10px;
+  color         : var(--text);
+  font-size     : 0.9rem;
+  padding       : 0.65rem 0.9rem;
+  outline       : none;
+  width         : 100%;
+  transition    : border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.modal-input::placeholder { color: var(--text-muted); }
+.modal-input::placeholder { color : var(--text-muted); }
 
 .modal-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  border-color : var(--accent);
+  box-shadow   : 0 0 0 2px var(--accent-dim);
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  display         : flex;
+  justify-content : flex-end;
+  gap             : 0.5rem;
+  margin-top      : 0.25rem;
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */
 .btn-primary {
-  padding: 0.5rem 1.25rem;
-  background: var(--accent);
-  border: none;
-  border-radius: 9999px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background 0.2s ease;
+  padding       : 0.5rem 1.25rem;
+  background    : var(--accent);
+  border        : none;
+  border-radius : 9999px;
+  color         : #ffffff;
+  cursor        : pointer;
+  font-size     : 0.875rem;
+  font-weight   : 500;
+  transition    : background 0.2s ease;
 }
 
-.btn-primary:hover { background: #7c3aed; }
+.btn-primary:hover { background : #7c3aed; }
 
 .btn-ghost {
-  padding: 0.5rem 1.25rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 9999px;
-  color: rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: background 0.15s ease, color 0.15s ease;
+  padding       : 0.5rem 1.25rem;
+  background    : transparent;
+  border        : 1px solid rgba(255, 255, 255, 0.10);
+  border-radius : 9999px;
+  color         : rgba(255, 255, 255, 0.55);
+  cursor        : pointer;
+  font-size     : 0.875rem;
+  transition    : background 0.15s ease, color 0.15s ease;
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
+  background : rgba(255, 255, 255, 0.06);
+  color      : var(--text);
 }
 
 /* ── Settings button ─────────────────────────────────────── */
 .settings-btn {
-  position: fixed;
-  bottom: 1.25rem;
-  right: 1.25rem;
-  width: 36px;
-  height: 36px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 50%;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  position                : fixed;
+  bottom                  : 1.25rem;
+  right                   : 1.25rem;
+  width                   : 36px;
+  height                  : 36px;
+  background              : var(--glass-bg);
+  backdrop-filter         : var(--glass-blur);
+  -webkit-backdrop-filter : var(--glass-blur);
+  border                  : 1px solid var(--glass-border);
+  border-radius           : 50%;
+  color                   : var(--text-muted);
+  cursor                  : pointer;
+  display                 : flex;
+  align-items             : center;
+  justify-content         : center;
+  z-index                 : 50;
+  transition              : color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .settings-btn:hover {
-  color: var(--text);
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  color        : var(--text);
+  border-color : rgba(255, 255, 255, 0.18);
+  background   : rgba(255, 255, 255, 0.08);
 }
 
 /* ── Settings modal list ─────────────────────────────────── */
 .settings-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  display        : flex;
+  flex-direction : column;
+  gap            : 0;
 }
 
 .setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  gap             : 1rem;
+  padding         : 0.75rem 0;
+  border-bottom   : 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.setting-row:last-child { border-bottom: none; }
+.setting-row:last-child { border-bottom : none; }
 
 .setting-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display        : flex;
+  flex-direction : column;
+  gap            : 2px;
 }
 
 .setting-label {
-  font-size: 0.9rem;
-  color: var(--text);
+  font-size : 0.9rem;
+  color     : var(--text);
 }
 
 .setting-desc {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  font-size : 0.78rem;
+  color     : var(--text-muted);
 }
 
 /* ── Toggle switch ───────────────────────────────────────── */
 .toggle {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  flex-shrink: 0;
-  cursor: pointer;
+  position    : relative;
+  width       : 40px;
+  height      : 22px;
+  flex-shrink : 0;
+  cursor      : pointer;
 }
 
-.toggle input { display: none; }
+.toggle input { display : none; }
 
 .toggle-track {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
-  transition: background 0.2s ease;
+  position      : absolute;
+  inset         : 0;
+  background    : rgba(255, 255, 255, 0.12);
+  border-radius : 9999px;
+  transition    : background 0.2s ease;
 }
 
 .toggle-track::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  top: 3px;
-  left: 3px;
-  transition: transform 0.2s ease, background 0.2s ease;
+  content       : "";
+  position      : absolute;
+  width         : 16px;
+  height        : 16px;
+  background    : rgba(255, 255, 255, 0.6);
+  border-radius : 50%;
+  top           : 3px;
+  left          : 3px;
+  transition    : transform 0.2s ease, background 0.2s ease;
 }
 
 .toggle input:checked + .toggle-track {
-  background: var(--accent);
+  background : var(--accent);
 }
 
 .toggle input:checked + .toggle-track::after {
-  transform: translateX(18px);
-  background: #fff;
+  transform  : translateX(18px);
+  background : #ffffff;
 }
 
 /* ── Latency badge ───────────────────────────────────────── */
 .latency-badge {
-  display: none;
-  position: fixed;
-  top: 1rem;
-  right: 1.25rem;
-  z-index: 100;
-  padding: 0.3rem 0.75rem;
-  border-radius: 9999px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-  transition: color 0.4s ease;
-  pointer-events: none;
-  user-select: none;
+  display                 : none;
+  position                : fixed;
+  top                     : 1rem;
+  right                   : 1.25rem;
+  z-index                 : 100;
+  padding                 : 0.3rem 0.75rem;
+  border-radius           : 9999px;
+  background              : var(--glass-bg);
+  border                  : 1px solid var(--glass-border);
+  backdrop-filter         : var(--glass-blur);
+  -webkit-backdrop-filter : var(--glass-blur);
+  font-size               : 0.75rem;
+  font-weight             : 500;
+  letter-spacing          : 0.04em;
+  color                   : var(--text-muted);
+  font-variant-numeric    : tabular-nums;
+  transition              : color 0.4s ease;
+  pointer-events          : none;
+  user-select             : none;
 }
 
-.latency-good { color: #4ade80; }
-.latency-mid  { color: #facc15; }
-.latency-bad  { color: var(--danger); }
+.latency-good { color : #4ade80; }
+
+.latency-mid { color : #facc15; }
+
+.latency-bad { color : var(--danger); }
 
 /* ── Setting select ──────────────────────────────────────── */
 .setting-select {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid var(--glass-border);
-  border-radius: 0.5rem;
-  color: var(--text);
-  font-size: 0.8rem;
-  padding: 0.35rem 0.6rem;
-  cursor: pointer;
-  outline: none;
-  flex-shrink: 0;
+  background    : rgba(255, 255, 255, 0.07);
+  border        : 1px solid var(--glass-border);
+  border-radius : 0.5rem;
+  color         : var(--text);
+  font-size     : 0.8rem;
+  padding       : 0.35rem 0.6rem;
+  cursor        : pointer;
+  outline       : none;
+  flex-shrink   : 0;
 }
 
 .setting-select:focus {
-  border-color: var(--accent-dim);
+  border-color : var(--accent-dim);
 }
