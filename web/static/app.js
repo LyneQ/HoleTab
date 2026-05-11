@@ -290,7 +290,7 @@ function enableDragAndDrop() {
       // Use HTMX to send the new order and update the grid
       htmx.ajax('PUT', '/links/reorder', {
         target: '#link-grid',
-        swap: 'outerHTML', // FIX: prevent nesting and fix the "cannot move other element" bug
+        swap: 'outerHTML',
         values: { ids: ids.join(',') }
       });
     }
