@@ -11,7 +11,7 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 - [x] **Import/Export**: Support for importing from HTML bookmark files and exporting to HTML bookmark (Netscape Bookmark File Format).
 - [x] **Drag-and-Drop Reordering**: Replace "up/down" buttons with a modern drag-and-drop interface (using HTMX or lightweight JS).
 - [x] **Responsive Grid**: Improve the layout for mobile and tablet devices.
-- [ ] **Fix z-index issues**: Context menu be hides by other links in small screens.
+- [x] **Fix z-index issues**: Context menu be hides by other links in small screens.
 
 ## 🟡 Phase 2: User Experience (Mid-term)
 - [ ] **Custom Favicons**: Allow uploading custom icons or choosing from a set of predefined icons when auto-resolution fails.
