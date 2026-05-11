@@ -41,6 +41,10 @@ templ LinkGrid(links []model.Link) {
 			<span class="add-tile-icon">+</span>
 			<span class="link-name">Add</span>
 		</button>
+		<button class="link-card done-tile" onclick="disableDragAndDrop()" type="button" title="Finish organizing">
+			<span class="done-tile-icon">✓</span>
+			<span class="link-name">Done</span>
+		</button>
 	</div>
 }
 
@@ -77,6 +81,11 @@ templ LinkCard(link model.Link) {
 				class="menu-item"
 				title="Move right"
 			>→ Move right</button>
+			<button
+				type="button"
+				class="menu-item"
+				data-action="organize"
+			>🔀 Organize</button>
 			<button
 				hx-delete={ fmt.Sprintf("/links/%d", link.ID) }
 				hx-target="#link-grid"

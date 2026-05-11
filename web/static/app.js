@@ -39,14 +39,6 @@ function closeAddModal() {
   document.getElementById('add-modal').classList.remove('open');
 }
 
-// Close modals after HTMX swaps the link grid (successful add or edit).
-document.addEventListener('htmx:afterSwap', function (e) {
-  if (e.detail.target && e.detail.target.id === 'link-grid') {
-    closeAddModal();
-    closeEditModal();
-  }
-});
-
 // Close modals when clicking their own backdrop.
 document.getElementById('add-modal').addEventListener('click', function (e) {
   if (e.target === this) closeAddModal();
@@ -227,6 +219,106 @@ function closeEditModal() {
   });
 })();
 
+/* ── Drag and Drop ──────────────────────────────────────── */
+var sortableInstance = null;
+var organizeModeActive = false; // Persistent state for the mode
+var selectedIds = []; // Track selected IDs for multi-reorder
+
+function disableDragAndDrop() {
+  organizeModeActive = false;
+  var grid = document.getElementById('link-grid');
+  if (grid) {
+    grid.classList.remove('organize-mode');
+    grid.querySelectorAll('.link-card.selected').forEach(function (el) {
+      el.classList.remove('selected');
+    });
+  }
+  selectedIds = [];
+  if (sortableInstance) {
+    sortableInstance.destroy();
+    sortableInstance = null;
+  }
+}
+
+function enableDragAndDrop() {
+  var grid = document.getElementById('link-grid');
+  if (!grid) return;
+
+  organizeModeActive = true;
+  grid.classList.add('organize-mode');
+
+  // Re-apply selected class if IDs were already selected
+  selectedIds.forEach(function (id) {
+    var el = document.getElementById('link-' + id);
+    if (el) el.classList.add('selected');
+  });
+
+  // Cleanup stale or existing instance
+  if (sortableInstance) {
+    if (sortableInstance.el === grid) return;
+    sortableInstance.destroy();
+  }
+
+  sortableInstance = new Sortable(grid, {
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    draggable: '.link-card:not(.add-tile):not(.done-tile)',
+    filter: '.card-menu-btn, .card-menu', // don't drag when clicking menu
+    onEnd: function (evt) {
+      var allCards = Array.from(grid.querySelectorAll('.link-card:not(.add-tile):not(.done-tile)'));
+      var ids = allCards.map(function (el) { return el.id.replace('link-', ''); });
+
+      var draggedId = evt.item.id.replace('link-', '');
+
+      if (selectedIds.includes(draggedId)) {
+        // Dragged a selected item, move all selected items together
+        var nonSelectedIds = ids.filter(function (id) { return !selectedIds.includes(id); });
+        var landingIdx = ids.indexOf(draggedId);
+
+        // Find how many selected items are before the landingIdx in the current DOM order
+        var selectedBefore = ids.slice(0, landingIdx).filter(function (id) {
+          return selectedIds.includes(id);
+        }).length;
+        var insertAt = landingIdx - selectedBefore;
+
+        // Construct new list: group all selected items at the insertion point
+        ids = nonSelectedIds.slice(0, insertAt)
+          .concat(selectedIds)
+          .concat(nonSelectedIds.slice(insertAt));
+      }
+
+      // Use HTMX to send the new order and update the grid
+      htmx.ajax('PUT', '/links/reorder', {
+        target: '#link-grid',
+        swap: 'outerHTML', // FIX: prevent nesting and fix the "cannot move other element" bug
+        values: { ids: ids.join(',') }
+      });
+    }
+  });
+}
+
+window.disableDragAndDrop = disableDragAndDrop;
+window.enableDragAndDrop  = enableDragAndDrop;
+
+// Consolidated HTMX loading and swap handling
+htmx.onLoad(function (content) {
+  var grid = content.id === 'link-grid' ? content : content.querySelector('#link-grid');
+  if (grid) {
+    // Close modals on successful grid update
+    closeAddModal();
+    closeEditModal();
+
+    // Re-enable organize mode if it was active
+    if (organizeModeActive) {
+      // Prune selectedIds that are no longer in the DOM
+      selectedIds = selectedIds.filter(function (id) {
+        return document.getElementById('link-' + id);
+      });
+      enableDragAndDrop();
+    }
+  }
+});
+
 /* ── Three-dot card menu ────────────────────────────────── */
 function closeAllMenus() {
   document.querySelectorAll('.card-menu.open').forEach(function (m) {
@@ -235,6 +327,8 @@ function closeAllMenus() {
 }
 
 document.addEventListener('click', function (e) {
+  var isOrganizeMode = organizeModeActive;
+
   // Toggle menu on ⋯ button click.
   var btn = e.target.closest('.card-menu-btn');
   if (btn) {
@@ -247,12 +341,37 @@ document.addEventListener('click', function (e) {
     return;
   }
 
+  // Handle selection in organize mode.
+  var card = e.target.closest('.link-card:not(.add-tile):not(.done-tile)');
+  if (isOrganizeMode && card && !e.target.closest('.card-menu-btn') && !e.target.closest('.card-menu')) {
+    e.preventDefault();
+    e.stopPropagation();
+    var cardId = card.id.replace('link-', '');
+    var idx = selectedIds.indexOf(cardId);
+    if (idx > -1) {
+      selectedIds.splice(idx, 1);
+      card.classList.remove('selected');
+    } else {
+      selectedIds.push(cardId);
+      card.classList.add('selected');
+    }
+    return;
+  }
+
   // Open edit modal when clicking the Edit menu item.
   var editBtn = e.target.closest('[data-action="edit"]');
   if (editBtn) {
     var d = editBtn.dataset;
     closeAllMenus();
     openEditModal(d.id, d.name, d.href, d.img);
+    return;
+  }
+
+  // Handle Organize action.
+  var organizeBtn = e.target.closest('[data-action="organize"]');
+  if (organizeBtn) {
+    closeAllMenus();
+    enableDragAndDrop();
     return;
   }
 
