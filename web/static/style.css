@@ -124,6 +124,7 @@ body {
 }
 
 .link-card:hover {
+  z-index      : 10;
   transform    : scale(1.08);
   filter       : brightness(1.2);
   border-color : rgba(255, 255, 255, 0.18);
@@ -202,8 +203,8 @@ body {
   top                     : calc(100% + 6px);
   right                   : 0;
   background              : rgba(18, 18, 32, 0.96);
-  backdrop-filter         : blur(16px);
-  -webkit-backdrop-filter : blur(16px);
+  /*backdrop-filter         : blur(16px);*/
+  /*-webkit-backdrop-filter : blur(16px);*/
   border                  : 1px solid rgba(255, 255, 255, 0.10);
   border-radius           : 10px;
   padding                 : 4px;
@@ -216,6 +217,7 @@ body {
 }
 
 .card-menu.open { display : flex; }
+.link-card.menu-open, .link-card:has(.card-menu.open) { z-index : 30; }
 
 .menu-item {
   background    : transparent;
@@ -625,4 +627,45 @@ body {
 
 .setting-select:focus {
   border-color : var(--accent-dim);
+}
+
+/* ── Sortable ────────────────────────────────────────────── */
+.organize-mode .link-card:not(.add-tile) {
+  cursor : grab;
+  border : 1px dashed var(--accent-dim);
+}
+
+.organize-mode .link-card:not(.add-tile).selected {
+  border: 2px solid var(--accent) !important;
+  box-shadow: 0 0 12px var(--accent-dim);
+  transform: scale(1.05);
+}
+
+.organize-mode .link-card:not(.add-tile):active {
+  cursor : grabbing;
+}
+
+.sortable-ghost {
+  opacity : 0.4;
+  border  : 2px solid var(--accent);
+}
+
+.done-tile {
+  display: none;
+}
+
+.organize-mode .done-tile {
+  display: flex;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.organize-mode .add-tile {
+  display: none;
+}
+
+.done-tile-icon {
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin-bottom: -4px;
 }

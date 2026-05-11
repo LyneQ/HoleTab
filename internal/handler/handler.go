@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"go.etcd.io/bbolt"
@@ -39,6 +40,7 @@ func New(database *bbolt.DB, cfg *config.Config, devMode bool) http.Handler {
 	r.Put("/links/{id}", h.UpdateLink)
 	r.Delete("/links/{id}", h.DeleteLink)
 	r.Get("/links/{id}/move", h.MoveLink)
+	r.Put("/links/reorder", h.ReorderLinks)
 	r.Get("/export", h.Export)
 	r.Post("/import", h.Import)
 
@@ -161,6 +163,35 @@ func (h *Handler) MoveLink(w http.ResponseWriter, r *http.Request) {
 
 	if err := db.MoveLink(h.DB, id, dir); err != nil {
 		http.Error(w, "failed to move link", http.StatusInternalServerError)
+		return
+	}
+
+	h.renderGrid(w, r)
+}
+
+// ReorderLinks handles PUT /links/reorder — reorders multiple links.
+func (h *Handler) ReorderLinks(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	idsStr := r.Form["ids"]
+	if len(idsStr) == 1 && strings.Contains(idsStr[0], ",") {
+		idsStr = strings.Split(idsStr[0], ",")
+	}
+
+	var ids []uint64
+	for _, s := range idsStr {
+		id, err := strconv.ParseUint(s, 10, 64)
+		if err != nil {
+			continue
+		}
+		ids = append(ids, id)
+	}
+
+	if err := db.ReorderLinks(h.DB, ids); err != nil {
+		http.Error(w, "failed to reorder", http.StatusInternalServerError)
 		return
 	}
 

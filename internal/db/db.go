@@ -188,6 +188,32 @@ func MoveLink(db *bbolt.DB, id uint64, dir string) error {
 	})
 }
 
+// ReorderLinks updates the positions of all links based on the provided ID order.
+func ReorderLinks(db *bbolt.DB, ids []uint64) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		b := tx.Bucket([]byte(bucketLinks))
+		for i, id := range ids {
+			v := b.Get(itob(id))
+			if v == nil {
+				continue // or return error? better skip if not found
+			}
+			var l model.Link
+			if err := json.Unmarshal(v, &l); err != nil {
+				return err
+			}
+			l.Position = i
+			newV, err := json.Marshal(l)
+			if err != nil {
+				return err
+			}
+			if err := b.Put(itob(id), newV); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // recompactPositions reassigns sequential 0-based positions to all links
 // in their current order. Must be called inside an Update transaction.
 func recompactPositions(b *bbolt.Bucket) error {
