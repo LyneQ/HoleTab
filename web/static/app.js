@@ -324,6 +324,9 @@ function closeAllMenus() {
   document.querySelectorAll('.card-menu.open').forEach(function (m) {
     m.classList.remove('open');
   });
+  document.querySelectorAll('.link-card.menu-open').forEach(function (c) {
+    c.classList.remove('menu-open');
+  });
 }
 
 document.addEventListener('click', function (e) {
@@ -337,7 +340,10 @@ document.addEventListener('click', function (e) {
     var menu = document.getElementById('menu-' + id);
     var wasOpen = menu.classList.contains('open');
     closeAllMenus();
-    if (!wasOpen) menu.classList.add('open');
+    if (!wasOpen) {
+      menu.classList.add('open');
+      btn.closest('.link-card').classList.add('menu-open');
+    }
     return;
   }
 

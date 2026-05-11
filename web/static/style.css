@@ -124,6 +124,7 @@ body {
 }
 
 .link-card:hover {
+  z-index      : 10;
   transform    : scale(1.08);
   filter       : brightness(1.2);
   border-color : rgba(255, 255, 255, 0.18);
@@ -216,6 +217,7 @@ body {
 }
 
 .card-menu.open { display : flex; }
+.link-card.menu-open, .link-card:has(.card-menu.open) { z-index : 30; }
 
 .menu-item {
   background    : transparent;
