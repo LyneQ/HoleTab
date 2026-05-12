@@ -87,17 +87,25 @@ func (h *Handler) AddLink(w http.ResponseWriter, r *http.Request) {
 
 	name := r.FormValue("name")
 	href := r.FormValue("href")
+	itemType := r.FormValue("type")
 
-	if name == "" {
-		name = generateName(href)
+	if itemType == "" {
+		itemType = "link"
 	}
 
 	img := r.FormValue("img")
-	if img == "" {
-		img = favicon.GetFaviconURL(href)
+
+	if itemType == "link" {
+		if name == "" {
+			name = generateName(href)
+		}
+		if img == "" {
+			img = favicon.GetFaviconURL(href)
+		}
 	}
 
 	link := model.Link{
+		Type: itemType,
 		Name: name,
 		Href: href,
 		Img:  img,

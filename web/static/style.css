@@ -78,6 +78,19 @@ body {
   row-gap       : 2.5rem;
 }
 
+/* ── Links grid ─────────────────────────────────────────── */
+.link-grid {
+  display         : flex;
+  flex-wrap       : wrap;
+  gap             : 0.5rem;
+  justify-content : center;
+  align-items     : center;
+  width           : 100%;
+  max-width       : 1200px;
+  margin          : 0 auto;
+  z-index         : 5;
+}
+
 /* ── Clock ──────────────────────────────────────────────── */
 .clock {
   font-size            : clamp(3rem, 6vw, 5rem);
@@ -90,15 +103,52 @@ body {
   user-select          : none;
 }
 
-/* ── Link grid ──────────────────────────────────────────── */
-.link-grid {
-  display         : flex;
-  flex-wrap       : wrap;
-  justify-content : center;
-  gap             : 1rem;
-  max-width       : 840px;
-  position        : relative;
-  z-index         : 2;
+/* ── Separator ──────────────────────────────────────────── */
+.link-card.separator {
+  width: 20px;
+  background: transparent;
+  backdrop-filter: none;
+  border-color: transparent;
+  cursor: default;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+
+.link-card.separator:hover {
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+.separator-line {
+  width: 2px;
+  height: 72px;
+  background: var(--glass-border);
+  border-radius: 1px;
+}
+
+.separator-delete-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white;
+  border: none;
+  font-size: 10px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.link-card.separator:hover .separator-delete-btn {
+  display: flex;
 }
 
 /* ── Link card (shared base) ────────────────────────────── */

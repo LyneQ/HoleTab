@@ -55,46 +55,67 @@ templ LinkGrid(links []model.Link) {
 
 // LinkCard renders a single bookmark card with a three-dot context menu.
 templ LinkCard(link model.Link) {
-	<div class="link-card" id={ fmt.Sprintf("link-%d", link.ID) }>
-		<button
-			class="card-menu-btn"
-			data-id={ fmt.Sprintf("%d", link.ID) }
-			type="button"
-			title="Options"
-		>⋯</button>
-		<div class="card-menu" id={ fmt.Sprintf("menu-%d", link.ID) }>
-			<button
-				type="button"
-				class="menu-item"
-				data-action="edit"
-				data-id={ fmt.Sprintf("%d", link.ID) }
-				data-name={ link.Name }
-				data-href={ link.Href }
-				data-img={ link.Img }
-			>✎ Edit</button>
-			<button
-				type="button"
-				class="menu-item"
-				data-action="organize"
-			>⇿ reorder</button>
+	if link.Type == "separator" {
+		<div class="link-card separator" id={ fmt.Sprintf("link-%d", link.ID) }>
 			<button
 				hx-delete={ fmt.Sprintf("/links/%d", link.ID) }
 				hx-target="#link-grid"
 				hx-swap="outerHTML"
-				hx-confirm="Delete this link?"
-				class="menu-item menu-item-danger"
-				title="Delete"
-			>✕ Delete</button>
+				hx-confirm="Delete this separator?"
+				class="separator-delete-btn"
+				title="Delete separator"
+			>✕</button>
+			<div class="separator-line"></div>
 		</div>
-		<a href={ templ.SafeURL(link.Href) } rel="noopener noreferrer" class="link-anchor">
-			if link.Img != "" {
-				<img src={ link.Img } alt="" class="link-favicon"/>
-			} else {
-				<span class="link-favicon-placeholder"></span>
-			}
-			<span class="link-name">{ link.Name }</span>
-		</a>
-	</div>
+	} else {
+		<div class="link-card" id={ fmt.Sprintf("link-%d", link.ID) }>
+			<button
+				class="card-menu-btn"
+				data-id={ fmt.Sprintf("%d", link.ID) }
+				type="button"
+				title="Options"
+			>⋯</button>
+			<div class="card-menu" id={ fmt.Sprintf("menu-%d", link.ID) }>
+				<button
+					type="button"
+					class="menu-item"
+					data-action="edit"
+					data-id={ fmt.Sprintf("%d", link.ID) }
+					data-name={ link.Name }
+					data-href={ link.Href }
+					data-img={ link.Img }
+				>✎ Edit</button>
+				<button
+					hx-post="/links"
+					hx-vals='{"type": "separator"}'
+					hx-target="#link-grid"
+					hx-swap="outerHTML"
+					class="menu-item"
+				>+ Separator</button>
+				<button
+					type="button"
+					class="menu-item"
+					data-action="organize"
+				>⇿ reorder</button>
+				<button
+					hx-delete={ fmt.Sprintf("/links/%d", link.ID) }
+					hx-target="#link-grid"
+					hx-swap="outerHTML"
+					hx-confirm="Delete this link?"
+					class="menu-item menu-item-danger"
+					title="Delete"
+				>✕ Delete</button>
+			</div>
+			<a href={ templ.SafeURL(link.Href) } rel="noopener noreferrer" class="link-anchor">
+				if link.Img != "" {
+					<img src={ link.Img } alt="" class="link-favicon"/>
+				} else {
+					<span class="link-favicon-placeholder"></span>
+				}
+				<span class="link-name">{ link.Name }</span>
+			</a>
+		</div>
+	}
 }
 
 // SearchBar renders the pill-shaped search form with inline engine selector.
@@ -205,6 +226,21 @@ templ SettingsModal(devMode bool, weatherEnabled bool, weatherLat, weatherLon st
 						<option value="cloudflare">Cloudflare</option>
 						<option value="google">Google</option>
 					</select>
+				</div>
+				<div class="setting-row">
+					<div class="setting-info">
+						<span class="setting-label">Separator</span>
+						<span class="setting-desc">Add a visual break between links</span>
+					</div>
+					<button
+						hx-post="/links"
+						hx-vals='{"type": "separator"}'
+						hx-target="#link-grid"
+						hx-swap="outerHTML"
+						class="btn-secondary"
+					>
+						Add separator
+					</button>
 				</div>
 				<div class="setting-row">
 					<div class="setting-info">
