@@ -14,7 +14,7 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 - [x] **Fix z-index issues**: Context menu be hides by other links in small screens.
 
 ## 🟡 Phase 2: User Experience (Mid-term)
-- [ ] **Custom Favicons**: Allow uploading custom icons or choosing from a set of predefined icons when auto-resolution fails.
+- [x] **Custom Favicons**: Allow uploading custom icons or choosing from a set of predefined icons when auto-resolution fails.
 - [ ] **Weather Widget**: A minimal, privacy-focused weather display (optional/configurable).
 - [ ] **Operating System Integration**: Support for Windows and macOS.
 - [ ] **Organise**: organise links into folders and support HTML bookmarks file folder structure.

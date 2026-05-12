@@ -72,10 +72,22 @@ func (h *Handler) AddLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	name := r.FormValue("name")
+	href := r.FormValue("href")
+
+	if name == "" {
+		name = generateName(href)
+	}
+
+	img := r.FormValue("img")
+	if img == "" {
+		img = favicon.GetFaviconURL(href)
+	}
+
 	link := model.Link{
-		Name: r.FormValue("name"),
-		Href: r.FormValue("href"),
-		Img:  favicon.GetFaviconURL(r.FormValue("href")),
+		Name: name,
+		Href: href,
+		Img:  img,
 	}
 
 	if err := db.AddLink(h.DB, link); err != nil {
@@ -84,6 +96,27 @@ func (h *Handler) AddLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderGrid(w, r)
+}
+
+func generateName(href string) string {
+	u, err := url.Parse(href)
+	if err != nil || u.Host == "" {
+		return href
+	}
+
+	// Try to get first words of domain
+	host := u.Host
+	host = strings.TrimPrefix(host, "www.")
+	parts := strings.Split(host, ".")
+	if len(parts) > 0 {
+		name := parts[0]
+		if len(name) > 0 {
+			// Capitalize first letter
+			return strings.ToUpper(name[:1]) + name[1:]
+		}
+	}
+
+	return host
 }
 
 // UpdateLink handles PUT /links/{id} — updates an existing link and returns the updated grid fragment.

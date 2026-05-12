@@ -257,7 +257,8 @@ templ AddForm() {
 				hx-swap="outerHTML"
 				class="modal-form"
 			>
-				<input type="text" name="name" placeholder="Name" required class="modal-input"/>
+				<input type="text" name="name" placeholder="Name (optional)" class="modal-input"/>
+				<input type="url" name="img" placeholder="Icon URL (optional)" class="modal-input"/>
 				<input type="url" name="href" placeholder="https://…" required class="modal-input"/>
 				<div class="modal-actions">
 					<button type="button" class="btn-ghost" onclick="closeAddModal()">Cancel</button>
