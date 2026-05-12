@@ -217,6 +217,22 @@ function closeEditModal() {
     save(settings);
     latencyControl.setTarget(settings.latencyTarget);
   });
+
+  window.requestBrowserLocation = function() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(function(position) {
+      var lat = position.coords.latitude.toFixed(4);
+      var lon = position.coords.longitude.toFixed(4);
+      document.getElementById('weather-lat').value = lat;
+      document.getElementById('weather-lon').value = lon;
+    }, function(err) {
+      alert("Error getting location: " + err.message);
+    });
+  };
 })();
 
 /* ── Drag and Drop ──────────────────────────────────────── */

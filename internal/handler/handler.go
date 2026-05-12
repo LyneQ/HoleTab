@@ -14,6 +14,7 @@ import (
 	"holetab/internal/db"
 	"holetab/internal/favicon"
 	"holetab/internal/model"
+	"holetab/internal/weather"
 	"holetab/web/templates"
 )
 
@@ -44,6 +45,10 @@ func New(database *bbolt.DB, cfg *config.Config, devMode bool) http.Handler {
 	r.Get("/export", h.Export)
 	r.Post("/import", h.Import)
 
+	r.Get("/widgets/weather", h.GetWeather)
+	r.Put("/widgets/weather/config", h.UpdateWeatherConfig)
+	r.Put("/widgets/weather/toggle", h.ToggleWeather)
+
 	if h.DevMode {
 		r.Post("/reset", h.ResetLinks)
 	}
@@ -59,8 +64,16 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	weatherEnabledStr, _ := db.GetConfig(h.DB, "weather_enabled")
+	weatherEnabled := weatherEnabledStr == "true"
+	weatherLocation, _ := db.GetConfig(h.DB, "weather_location")
+	var lat, lon string
+	if parts := strings.Split(weatherLocation, ","); len(parts) == 2 {
+		lat, lon = parts[0], parts[1]
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates.Index(links, h.DevMode).Render(r.Context(), w); err != nil {
+	if err := templates.Index(links, h.DevMode, weatherEnabled, lat, lon).Render(r.Context(), w); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
@@ -336,4 +349,71 @@ func (h *Handler) ResetLinks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderGrid(w, r)
+}
+
+// GetWeather handles GET /widgets/weather — fetches and renders the weather widget.
+func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
+	enabled, _ := db.GetConfig(h.DB, "weather_enabled")
+	if enabled != "true" {
+		return
+	}
+
+	location, _ := db.GetConfig(h.DB, "weather_location")
+	if location == "" {
+		return
+	}
+	parts := strings.Split(location, ",")
+	if len(parts) != 2 {
+		return
+	}
+	info, err := weather.GetWeather(parts[0], parts[1])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := templates.WeatherWidget(info).Render(r.Context(), w); err != nil {
+		http.Error(w, "render error", http.StatusInternalServerError)
+	}
+}
+
+// UpdateWeatherConfig handles PUT /widgets/weather/config — saves the lat/lon to the DB.
+func (h *Handler) UpdateWeatherConfig(w http.ResponseWriter, r *http.Request) {
+	lat := r.FormValue("lat")
+	lon := r.FormValue("lon")
+	if lat == "" || lon == "" {
+		http.Error(w, "lat and lon are required", http.StatusBadRequest)
+		return
+	}
+	err := db.SetConfig(h.DB, "weather_location", lat+","+lon)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("HX-Trigger", "load-weather")
+	w.WriteHeader(http.StatusOK)
+}
+
+// ToggleWeather handles PUT /widgets/weather/toggle — enables or disables the weather widget.
+func (h *Handler) ToggleWeather(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	// For a checkbox, HTMX sends nothing if unchecked, and "on" if checked (by default).
+	// But we can also check if the key exists.
+	enabled := "false"
+	if r.FormValue("enabled") == "on" || r.Form.Has("enabled") {
+		enabled = "true"
+	}
+
+	if err := db.SetConfig(h.DB, "weather_enabled", enabled); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
 }

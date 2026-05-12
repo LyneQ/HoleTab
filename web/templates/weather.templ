@@ -1,0 +1,16 @@
+package templates
+
+import (
+	"fmt"
+	"holetab/internal/weather"
+)
+
+templ WeatherWidget(info *weather.WeatherInfo) {
+	if info != nil {
+		<div class="weather-widget">
+			<span class="weather-emoji" title={ info.Label }>{ info.Emoji }</span>
+			<span class="weather-temp">{ fmt.Sprintf("%.1f°C", info.Temp) }</span>
+			<span class="weather-wind">💨 { fmt.Sprintf("%.0f km/h", info.WindSpeed) }</span>
+		</div>
+	}
+}

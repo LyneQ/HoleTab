@@ -669,3 +669,60 @@ body {
   font-weight: 300;
   margin-bottom: -4px;
 }
+
+/* ── Settings inputs ─────────────────────────────────────── */
+.setting-input-small {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.setting-input-small:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Weather Widget ─────────────────────────────────────── */
+.weather-widget {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  border: 1px solid var(--glass-border);
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-top: -1.5rem;
+  animation: fade-in 0.5s ease-out;
+}
+
+.weather-emoji {
+  font-size: 1.2rem;
+}
+
+.weather-temp {
+  font-weight: 500;
+}
+
+.weather-wind {
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
+.weather-empty {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

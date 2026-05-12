@@ -13,7 +13,10 @@ import (
 	"holetab/internal/model"
 )
 
-const bucketLinks = "links"
+const (
+	bucketLinks  = "links"
+	bucketConfig = "config"
+)
 
 // Open initialises the bbolt database at the given path, creating it if absent.
 // The caller is responsible for calling db.Close().
@@ -26,10 +29,15 @@ func Open(path string) (*bbolt.DB, error) {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
 
-	// Ensure the links bucket exists.
+	// Ensure buckets exist.
 	err = db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(bucketLinks))
-		return err
+		if _, err := tx.CreateBucketIfNotExists([]byte(bucketLinks)); err != nil {
+			return err
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(bucketConfig)); err != nil {
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create bucket: %w", err)
@@ -260,4 +268,32 @@ func itob(v uint64) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, v)
 	return b
+}
+
+// GetConfig retrieves a string value from the config bucket.
+func GetConfig(db *bbolt.DB, key string) (string, error) {
+	var value string
+	err := db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket([]byte(bucketConfig))
+		if b == nil {
+			return nil
+		}
+		v := b.Get([]byte(key))
+		if v != nil {
+			value = string(v)
+		}
+		return nil
+	})
+	return value, err
+}
+
+// SetConfig stores a string value in the config bucket.
+func SetConfig(db *bbolt.DB, key string, value string) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(bucketConfig))
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(key), []byte(value))
+	})
 }
