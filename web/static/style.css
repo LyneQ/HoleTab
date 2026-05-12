@@ -75,7 +75,7 @@ body {
   align-content : center;
   min-height    : 100vh;
   padding       : 2rem;
-  row-gap       : 2.5rem;
+  row-gap       : 2rem;
 }
 
 /* ── Links grid ─────────────────────────────────────────── */
@@ -92,6 +92,12 @@ body {
 }
 
 /* ── Clock ──────────────────────────────────────────────── */
+.widget-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .clock {
   font-size            : clamp(3rem, 6vw, 5rem);
   font-weight          : 200;
@@ -737,6 +743,13 @@ body {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.weather-container {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ── Weather Widget ─────────────────────────────────────── */
 .weather-widget {
   display: flex;
@@ -750,7 +763,6 @@ body {
   border: 1px solid var(--glass-border);
   font-size: 0.9rem;
   color: var(--text);
-  margin-top: -1.5rem;
   animation: fade-in 0.5s ease-out;
 }
 

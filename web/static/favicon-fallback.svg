@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Radial gradient for the void core -->
+    <radialGradient id="void" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#000000"/>
+      <stop offset="100%" stop-color="#0d0d12"/>
+    </radialGradient>
+
+    <!-- Glow blur filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle outer ring gradient -->
+    <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="60%"  stop-color="#7c6af7" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#7c6af7" stop-opacity="0.25"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background pill — dark slate, slightly rounded square -->
+  <rect width="32" height="32" rx="7" fill="#0d0d12"/>
+
+  <!-- Outer ambient glow ring -->
+  <circle cx="16" cy="16" r="12" fill="url(#ringGrad)"/>
+
+  <!-- Accretion disk — outer ellipse -->
+  <ellipse cx="16" cy="16" rx="11" ry="3.8"
+    fill="none"
+    stroke="#7c6af7"
+    stroke-width="1"
+    stroke-opacity="0.35"
+    filter="url(#glow)"/>
+
+  <!-- Accretion disk — inner ellipse -->
+  <ellipse cx="16" cy="16" rx="8.2" ry="2.4"
+    fill="none"
+    stroke="#a89cf7"
+    stroke-width="0.7"
+    stroke-opacity="0.5"
+    filter="url(#glow)"/>
+
+  <!-- The void: black hole core -->
+  <circle cx="16" cy="16" r="5.2" fill="url(#void)"/>
+
+  <!-- Crisp edge of the event horizon -->
+  <circle cx="16" cy="16" r="5.2"
+    fill="none"
+    stroke="#7c6af7"
+    stroke-width="0.6"
+    stroke-opacity="0.7"
+    filter="url(#glow)"/>
+</svg>

@@ -12,12 +12,14 @@ templ Index(links []model.Link, devMode bool, weatherEnabled bool, weatherLat, w
 		<div class="orb orb-2"></div>
 		<div class="orb orb-3"></div>
 		<div class="page">
-			<div id="clock" class="clock">00:00</div>
-			if weatherEnabled {
-				<div hx-get="/widgets/weather" hx-trigger="load, every 10m, load-weather from:body">
-					@WeatherWidget(nil)
-				</div>
-			}
+			<div class="widget-container">
+				<div id="clock" class="clock">00:00</div>
+				if weatherEnabled {
+					<div hx-get="/widgets/weather" hx-trigger="load, every 10m, load-weather from:body" class="weather-container">
+						@WeatherWidget(nil)
+					</div>
+				}
+			</div>
 			@LinkGrid(links)
 			@SearchBar()
 		</div>
@@ -30,7 +32,6 @@ templ Index(links []model.Link, devMode bool, weatherEnabled bool, weatherLat, w
 		</button>
 		@AddForm()
 		@EditModal()
-
 		@SettingsModal(devMode, weatherEnabled, weatherLat, weatherLon)
 	}
 }
@@ -108,7 +109,7 @@ templ LinkCard(link model.Link) {
 			</div>
 			<a href={ templ.SafeURL(link.Href) } rel="noopener noreferrer" class="link-anchor">
 				if link.Img != "" {
-					<img src={ link.Img } alt="" class="link-favicon"/>
+					<img src={ link.Img } alt="" class="link-favicon" onerror="this.src='/static/favicon-fallback.svg'; this.onerror=null;"/>
 				} else {
 					<span class="link-favicon-placeholder"></span>
 				}
@@ -226,21 +227,6 @@ templ SettingsModal(devMode bool, weatherEnabled bool, weatherLat, weatherLon st
 						<option value="cloudflare">Cloudflare</option>
 						<option value="google">Google</option>
 					</select>
-				</div>
-				<div class="setting-row">
-					<div class="setting-info">
-						<span class="setting-label">Separator</span>
-						<span class="setting-desc">Add a visual break between links</span>
-					</div>
-					<button
-						hx-post="/links"
-						hx-vals='{"type": "separator"}'
-						hx-target="#link-grid"
-						hx-swap="outerHTML"
-						class="btn-secondary"
-					>
-						Add separator
-					</button>
 				</div>
 				<div class="setting-row">
 					<div class="setting-info">
