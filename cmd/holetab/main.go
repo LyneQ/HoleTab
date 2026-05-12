@@ -15,7 +15,7 @@ import (
 )
 
 // devMode enables access to debug options like delete all links
-const devMode = true
+const devMode = false
 
 func main() {
 	// 1. Load (or create) configuration.
