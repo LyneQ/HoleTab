@@ -17,7 +17,6 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 - [x] **Custom Favicons**: Allow uploading custom icons or choosing from a set of predefined icons when auto-resolution fails.
 - [x] **Weather Widget**: A minimal, privacy-focused weather display (optional/configurable).
 - [ ] **Operating System Integration**: Support for Windows and macOS.
-- [ ] **Organise**: organise links into folders and support HTML bookmarks file folder structure.
 
 ## 🔵 Phase 3: Technical & Infrastructure (Long-term)
 - [ ] **Docker Support**: Provide a lightweight Scratch/Alpine-based Docker image.
