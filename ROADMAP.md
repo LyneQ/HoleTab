@@ -16,12 +16,15 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 ## 🟡 Phase 2: User Experience (Mid-term)
 - [x] **Custom Favicons**: Allow uploading custom icons or choosing from a set of predefined icons when auto-resolution fails.
 - [x] **Weather Widget**: A minimal, privacy-focused weather display (optional/configurable).
-- [ ] **Operating System Integration**: Support for Windows and macOS.
+- [ ] **config path**: Fix dev path in config.toml (put the production path)
+- [ ] **Uninstall**: Make an uninstallation script
+- [ ] **scripts**: Move all scripts to a single directory for easier maintenance.
 
 ## 🔵 Phase 3: Technical & Infrastructure (Long-term)
 - [ ] **Docker Support**: Provide a lightweight Scratch/Alpine-based Docker image.
 - [ ] **Basic Auth**: Optional simple password protection for the web interface.
-- [ ] **scripts**: move all scripts to a single directory for easier maintenance.
+- [ ] **Operating System Integration**: Support for Windows and macOS. 
+- [ ] **Docker**: Provide a Docker image for easy deployment.
 ---
 
 ## ✅ Completed
