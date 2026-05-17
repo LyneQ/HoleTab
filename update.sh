@@ -2,35 +2,49 @@
 set -euo pipefail
 
 APP=holetab
-BIN=/usr/local/bin/$APP
-SERVICE=/etc/systemd/system/$APP.service
+BIN="$HOME/.local/bin/$APP"
+SERVICE_DIR="$HOME/.config/systemd/user"
+SERVICE="$SERVICE_DIR/$APP.service"
 
-if [[ $EUID -ne 0 ]]; then
-  echo "Run as root: sudo ./update.sh" && exit 1
+# ── Guards ────────────────────────────────────────────────────────────────────
+
+if [[ $EUID -eq 0 ]]; then
+  echo "error: do not run as root (user-level install)" && exit 1
 fi
 
-if ! systemctl is-enabled --quiet $APP 2>/dev/null; then
+if ! systemctl --user is-enabled --quiet "$APP" 2>/dev/null; then
   echo "$APP is not installed. Run ./install.sh first." && exit 1
 fi
 
-if [[ ! -f ./bin/$APP ]]; then
-  echo "Binary not found. Run 'make build' first." && exit 1
+if ! command -v make &>/dev/null; then
+  echo "error: 'make' not found in PATH" && exit 1
 fi
 
+# ── Build ─────────────────────────────────────────────────────────────────────
+
+echo "==> Building..."
+make build
+
+# ── Swap ──────────────────────────────────────────────────────────────────────
+
 echo "==> Stopping service..."
-systemctl stop $APP
+systemctl --user stop "$APP"
 
 echo "==> Swapping binary..."
-cp ./bin/$APP $BIN
-chmod 755 $BIN
+cp "./bin/$APP" "$BIN"
+chmod 755 "$BIN"
 
-echo "==> Updating service..."
-cp $APP.service $SERVICE
-systemctl daemon-reload
+echo "==> Updating service file..."
+cp "$APP.service" "$SERVICE"
+systemctl --user daemon-reload
+
+# ── Restart ───────────────────────────────────────────────────────────────────
 
 echo "==> Restarting service..."
-systemctl start $APP
+systemctl --user start "$APP"
+
+# ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""
 echo "Done! Status:"
-systemctl status $APP --no-pager
+systemctl --user status "$APP" --no-pager

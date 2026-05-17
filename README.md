@@ -1,73 +1,77 @@
 # HoleTab
+
 A self-hosted, single-binary new-tab page server.  
 No Node.js, no extensions, no CGO — just one Go binary.
 
 ## Requirements
+
 - Go 1.23+
-- [`templ`](https://templ.guide) CLI: `go install github.com/a-h/templ/cmd/templ@latest`
 
-## Development
+> `templ` is installed automatically by `make build` if not present.
+
+## Install
+
 ```sh
-# Build the binary (output: ./bin/holetab)
-make build
-
-# Run in development (templ generate + go run, auto-downloads htmx)
-make dev
-```
-Open `http://localhost:8080` in your browser.
-
-## Configuration
-Copy `config.example.toml` and edit before starting:
-```toml
-[server]
-port = 8080
-
-[database]
-path = "/var/lib/holetab/holetab.db"
+make install
 ```
 
-## Installation (systemd)
+This builds the binary, installs it to `~/.local/bin/holetab`, copies the default config to `~/.config/holetab/config.toml`, and enables the systemd user service.
+
+Edit the config after installing (if needed):
+
 ```sh
-make build
-sudo ./install.sh
+$EDITOR ~/.config/holetab/config.toml
 ```
-
-`install.sh`: 
-- installs the binary to `/usr/local/bin/`,
-- copies the config to `/etc/holetab/config.toml`
-- database for the saved links is created in `/var/lib/holetab/holetab.db`,
-- enables the service at startup.
-
 
 ## Update
+
 ```sh
-make build
-sudo ./update.sh
+make update
 ```
 
-## Service management
+## Uninstall
+
 ```sh
-sudo systemctl status holetab
-sudo systemctl start holetab
-sudo systemctl stop holetab
-sudo systemctl restart holetab
+make uninstall
+```
+
+The config and database (`~/.config/holetab/`) are kept by default — you will be prompted.
+
+## Service
+
+```sh
+systemctl --user status holetab
+systemctl --user start holetab
+systemctl --user stop holetab
+systemctl --user restart holetab
 
 # Logs
-journalctl -u holetab -f
+journalctl --user -u holetab -f
 ```
 
-## Project layout
+## Development
+
+```sh
+make build   # build the binary (output: ./bin/holetab)
+make dev     # templ generate + go run
 ```
-cmd/holetab/      — main entry point
-internal/config/  — config loading
-internal/db/      — bbolt CRUD
-internal/handler/ — HTTP handlers (chi)
-internal/favicon/ — favicon URL resolver
-internal/model/   — Link struct
-web/templates/    — templ templates
-web/static/       — embedded static assets (htmx, css)
-install.sh        — first install
-update.sh         — update binary + service
-holetab.service   — systemd unit file
+
+Open `http://localhost:3654`.
+
+## Project layout
+
+```
+cmd/holetab/        — entry point
+internal/config/    — config loading
+internal/db/        — bbolt CRUD
+internal/handler/   — HTTP handlers
+internal/favicon/   — favicon resolver
+internal/model/     — Link struct
+web/templates/      — templ templates
+web/static/         — embedded static assets (htmx, css)
+install.sh          — first install
+update.sh           — update binary + service
+uninstall.sh        — uninstall
+holetab.service     — systemd user unit
 config.example.toml
 ```

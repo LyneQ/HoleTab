@@ -1,11 +1,17 @@
-TEMPL ?= $(shell go env GOPATH)/bin/templ
-.PHONY: build dev clean htmx install update
+TEMPL := $(shell go env GOPATH)/bin/templ
+.PHONY: build dev clean htmx templ install update uninstall
 
-build: htmx
+templ:
+	@if [ ! -f $(TEMPL) ]; then \
+		echo "==> Installing templ..."; \
+		go install github.com/a-h/templ/cmd/templ@latest; \
+	fi
+
+build: templ htmx
 	$(TEMPL) generate ./web/templates/...
 	go build -ldflags="-s -w" -o ./bin/holetab ./cmd/holetab
 
-dev: htmx
+dev: templ htmx
 	$(TEMPL) generate ./web/templates/... && go run ./cmd/holetab
 
 clean:
@@ -19,7 +25,10 @@ htmx:
 	fi
 
 install:
-	sudo ./install.sh
+	./install.sh
 
 update:
-	sudo ./update.sh
+	./update.sh
+
+uninstall:
+	./uninstall.sh

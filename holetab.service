@@ -4,22 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=holetab
-Group=holetab
-
-ExecStart=/usr/local/bin/holetab --config /etc/holetab/config.toml
+ExecStart=%h/.local/bin/holetab --config %h/.config/holetab/config.toml
 Restart=on-failure
 RestartSec=5s
 
-WorkingDirectory=/var/lib/holetab
-StateDirectory=holetab
-ReadWritePaths=/var/lib/holetab /etc/holetab
-
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=true
-PrivateTmp=true
-ReadWritePaths=/var/lib/holetab
-
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

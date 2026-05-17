@@ -2,47 +2,60 @@
 set -euo pipefail
 
 APP=holetab
-BIN=/usr/local/bin/$APP
-SERVICE=/etc/systemd/system/$APP.service
-CONFIG_DIR=/etc/$APP
-DATA_DIR=/var/lib/$APP
+BIN_DIR="$HOME/.local/bin"
+BIN="$BIN_DIR/$APP"
+CONFIG_DIR="$HOME/.config/$APP"
+SERVICE_DIR="$HOME/.config/systemd/user"
+SERVICE="$SERVICE_DIR/$APP.service"
 
-if [[ $EUID -ne 0 ]]; then
-  echo "Run as root: sudo ./install.sh" && exit 1
+# ── Guards ────────────────────────────────────────────────────────────────────
+
+if [[ $EUID -eq 0 ]]; then
+  echo "error: do not run as root (user-level install)" && exit 1
 fi
 
-if systemctl is-active --quiet $APP; then
-  echo "$APP is already installed. Use ./update.sh instead." && exit 1
+if systemctl --user is-active --quiet "$APP" 2>/dev/null; then
+  echo "$APP is already running. Use ./update.sh instead." && exit 1
 fi
 
-if [[ ! -f ./bin/$APP ]]; then
-  echo "Binary not found. Run 'make build' first." && exit 1
+if ! command -v make &>/dev/null; then
+  echo "error: 'make' not found in PATH" && exit 1
 fi
 
-echo "==> Creating user..."
-useradd -r -s /sbin/nologin -d $DATA_DIR $APP 2>/dev/null || true
+# ── Build ─────────────────────────────────────────────────────────────────────
+
+echo "==> Building..."
+make build
+
+# ── Binary ────────────────────────────────────────────────────────────────────
 
 echo "==> Installing binary..."
-cp ./bin/$APP $BIN
-chmod 755 $BIN
+mkdir -p "$BIN_DIR"
+cp "./bin/$APP" "$BIN"
+chmod 755 "$BIN"
 
-echo "==> Creating directories..."
-mkdir -p $CONFIG_DIR $DATA_DIR
-chown $APP:$APP $DATA_DIR
+# ── Config ────────────────────────────────────────────────────────────────────
 
-echo "==> Installing config..."
-if [[ ! -f $CONFIG_DIR/config.toml ]]; then
-  cp config.example.toml $CONFIG_DIR/config.toml
-  echo "    Edit $CONFIG_DIR/config.toml before starting"
+echo "==> Creating config directory..."
+mkdir -p "$CONFIG_DIR"
+
+if [[ ! -f "$CONFIG_DIR/config.toml" ]]; then
+  cp config.example.toml "$CONFIG_DIR/config.toml"
+  echo "    Config installed — edit $CONFIG_DIR/config.toml before starting"
 else
   echo "    Config already exists, skipping"
 fi
 
+# ── Systemd user service ──────────────────────────────────────────────────────
+
 echo "==> Installing service..."
-cp $APP.service $SERVICE
-systemctl daemon-reload
-systemctl enable --now $APP
+mkdir -p "$SERVICE_DIR"
+cp "$APP.service" "$SERVICE"
+systemctl --user daemon-reload
+systemctl --user enable --now "$APP"
+
+# ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""
 echo "Done! Status:"
-systemctl status $APP --no-pager
+systemctl --user status "$APP" --no-pager

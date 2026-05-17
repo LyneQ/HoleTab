@@ -4,4 +4,4 @@
 port = "3654"
 
 [database]
-path = "/var/lib/holetab/holetab.db"
+path = "~/.config/holetab/holetab.db"
