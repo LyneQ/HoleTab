@@ -22,7 +22,6 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 
 ## 🔵 Phase 3: Technical & Infrastructure (Long-term)
 - [ ] **Docker Support**: Provide a lightweight Scratch/Alpine-based Docker image.
-- [ ] **Basic Auth**: Optional simple password protection for the web interface.
 - [ ] **Operating System Integration**: Support for Windows and macOS. 
 - [ ] **Docker**: Provide a Docker image for easy deployment.
 ---
