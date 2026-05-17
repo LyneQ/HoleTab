@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"go.etcd.io/bbolt"
 
@@ -21,6 +22,15 @@ const (
 // Open initialises the bbolt database at the given path, creating it if absent.
 // The caller is responsible for calling db.Close().
 func Open(path string) (*bbolt.DB, error) {
+
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("get home dir: %w", err)
+		}
+		path = filepath.Join(home, path[2:])
+	}
+
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return nil, fmt.Errorf("create db dir: %w", err)
 	}
