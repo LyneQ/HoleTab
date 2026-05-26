@@ -1,0 +1,47 @@
+package widget
+
+import "holetab/internal/model"
+
+templ SearchResults(results []model.SearchResult) {
+	if len(results) == 0 {
+		<p class="no-results">Aucun résultat trouvé.</p>
+	} else {
+		<ul class="search-results-list">
+			for _, res := range results {
+				<li class={ "search-result", templ.KV("video-result", res.Type == model.TypeVideo) }>
+					if res.Type == model.TypeVideo {
+						<a href={ templ.SafeURL(res.URL) } rel="noopener noreferrer" class="video-card">
+							if res.Icon != "" {
+								<img src={ res.Icon } alt="" class="result-icon"/>
+							}
+							<div class="video-info">
+								<h3 class="video-title">@templ.Raw(res.Title)</h3>
+								<div class="video-meta">
+									<span class="video-source">{ res.SiteName }</span>
+								</div>
+								if res.Desc != "" {
+									<p class="result-desc">@templ.Raw(res.Desc)</p>
+								}
+							</div>
+						</a>
+					} else {
+						<div class="web-result">
+							<div class="result-header">
+								if res.Icon != "" {
+									<img src={ res.Icon } alt="" class="result-icon"/>
+								}
+								<div class="result-meta">
+									<a href={ templ.SafeURL(res.URL) } rel="noopener noreferrer" class="result-link">
+										<h3 class="result-title">@templ.Raw(res.Title)</h3>
+									</a>
+									<div class="result-domain">{ res.Domain }</div>
+								</div>
+							</div>
+							<p class="result-desc">@templ.Raw(res.Desc)</p>
+						</div>
+					}
+				</li>
+			}
+		</ul>
+	}
+}

@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"holetab/internal/model"
+	"holetab/web/templates/widget"
 )
 
 // Index renders the full new-tab page wrapped in Layout.
@@ -16,12 +17,12 @@ templ Index(links []model.Link, devMode bool, weatherEnabled bool, weatherLat, w
 				<div id="clock" class="clock">00:00</div>
 				if weatherEnabled {
 					<div hx-get="/widgets/weather" hx-trigger="load, every 10m, load-weather from:body" class="weather-container">
-						@WeatherWidget(nil)
+						@widget.WeatherWidget(nil)
 					</div>
 				}
 			</div>
 			@LinkGrid(links)
-			@SearchBar()
+			@SearchPage()
 		</div>
 		<div id="latency-badge" class="latency-badge"></div>
 		<button class="settings-btn" onclick="openSettingsModal()" type="button" title="Settings">
@@ -129,6 +130,7 @@ templ SearchBar() {
 		class="search-bar"
 	>
 		<select id="search-engine-select" name="engine" class="search-engine-select">
+			<option value="mixed">Mixed</option>
 			<option value="google">Google</option>
 			<option value="duckduckgo">DuckDuckGo</option>
 			<option value="bing">Bing</option>

@@ -16,7 +16,7 @@ button, input, select { font-family : inherit; }
 }
 
 /* ── Body + dark gradient ───────────────────────────────── */
-html, body { height : 100%; }
+/*html, body { height : 100%; }*/
 
 body {
   font-family : "Inter", system-ui, sans-serif;

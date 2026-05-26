@@ -20,8 +20,9 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 - [x] **Uninstall**: Make an uninstallation script
 
 ## 🔵 Phase 3: Technical & Infrastructure (Long-term)
+- [ ] **Compat**: switch to SQLite
 - [ ] **Docker Support**: Provide a lightweight Scratch/Alpine-based Docker image.
-- [ ] **Operating System Integration**: Support for Windows and macOS. 
+- [ ] **Operating System Integration**: Support for Windows and macOS.
 - [ ] **Docker**: Provide a Docker image for easy deployment.
 ---
 

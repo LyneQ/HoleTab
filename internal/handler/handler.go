@@ -14,8 +14,10 @@ import (
 	"holetab/internal/db"
 	"holetab/internal/favicon"
 	"holetab/internal/model"
+	"holetab/internal/search"
 	"holetab/internal/weather"
 	"holetab/web/templates"
+	"holetab/web/templates/widget"
 )
 
 // Handler holds shared dependencies for all HTTP handlers.
@@ -36,6 +38,7 @@ func New(database *bbolt.DB, cfg *config.Config, devMode bool) http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/", h.Index)
+	r.Get("/search", search.Handler)
 	r.Post("/search", h.Search)
 	r.Post("/links", h.AddLink)
 	r.Put("/links/{id}", h.UpdateLink)
@@ -262,15 +265,20 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	q := url.QueryEscape(r.FormValue("q"))
 
 	var searchURL string
-	switch r.FormValue("engine") {
-	case "duckduckgo":
-		searchURL = "https://duckduckgo.com/?q=" + q
-	case "bing":
-		searchURL = "https://www.bing.com/search?q=" + q
-	case "brave":
-		searchURL = "https://search.brave.com/search?q=" + q
-	default:
-		searchURL = "https://www.google.com/search?q=" + q
+	engine := r.FormValue("engine")
+	if engine == "mixed" {
+		searchURL = "/search?q=" + q
+	} else {
+		switch engine {
+		case "duckduckgo":
+			searchURL = "https://duckduckgo.com/?q=" + q
+		case "bing":
+			searchURL = "https://www.bing.com/search?q=" + q
+		case "brave":
+			searchURL = "https://search.brave.com/search?q=" + q
+		default:
+			searchURL = "https://www.google.com/search?q=" + q
+		}
 	}
 
 	w.Header().Set("HX-Redirect", searchURL)
@@ -381,7 +389,7 @@ func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates.WeatherWidget(info).Render(r.Context(), w); err != nil {
+	if err := widget.WeatherWidget(info).Render(r.Context(), w); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
