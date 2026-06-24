@@ -42,7 +42,6 @@
   width: clamp(480px, 60vw, 800px);
   max-width: 95vw;
   margin-top: 1rem;
-  z-index: 5;
 }
 
 #search-results {
