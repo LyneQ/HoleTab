@@ -14,6 +14,7 @@ var (
 	// Very simple regex to find <A HREF="...">Name</A>
 	// It's not perfect for all HTML, but Netscape format is usually predictable.
 	linkRegex = regexp.MustCompile(`(?i)<A\s+[^>]*HREF=["']([^"']+)["'][^>]*>([^<]*)</A>`)
+	hrRegex   = regexp.MustCompile(`(?i)<HR>`)
 )
 
 // Import parses the bookmarks from the given reader in Netscape Bookmark File Format.
@@ -23,6 +24,13 @@ func Import(r io.Reader) ([]model.Link, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		if hrRegex.MatchString(line) {
+			links = append(links, model.Link{
+				Type: "separator",
+			})
+		}
+
 		matches := linkRegex.FindAllStringSubmatch(line, -1)
 		for _, match := range matches {
 			if len(match) >= 3 {
@@ -32,6 +40,7 @@ func Import(r io.Reader) ([]model.Link, error) {
 					name = href
 				}
 				links = append(links, model.Link{
+					Type: "link",
 					Name: strings.TrimSpace(name),
 					Href: href,
 					Img:  favicon.GetFaviconURL(href),

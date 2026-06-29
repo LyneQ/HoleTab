@@ -31,6 +31,13 @@ func Export(w io.Writer, links []model.Link) error {
 	}
 
 	for _, link := range links {
+		if link.Type == "separator" {
+			if _, err := fmt.Fprint(w, "    <HR>\n"); err != nil {
+				return err
+			}
+			continue
+		}
+
 		// ADD_DATE is expected to be a unix timestamp
 		// Since model.Link doesn't have a timestamp, we use current time for now or 0
 		addDate := time.Now().Unix()
