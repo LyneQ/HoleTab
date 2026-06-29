@@ -75,7 +75,7 @@ body {
   align-content : center;
   min-height    : 100vh;
   padding       : 2rem;
-  row-gap       : 2rem;
+  row-gap       : 1.5rem;
 }
 
 /* ── Links grid ─────────────────────────────────────────── */
