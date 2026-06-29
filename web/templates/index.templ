@@ -16,7 +16,7 @@ templ Index(links []model.Link, devMode bool, weatherEnabled bool, weatherLat, w
 			<div class="widget-container">
 				<div id="clock" class="clock">00:00</div>
 				if weatherEnabled {
-					<div hx-get="/widgets/weather" hx-trigger="load, every 10m, load-weather from:body" class="weather-container">
+					<div hx-get="/widgets/weather" hx-trigger="load, every 10m, load-weather from:body" hx-sync="this:replace" class="weather-container">
 						@widget.WeatherWidget(nil)
 					</div>
 				}
@@ -125,8 +125,8 @@ templ LinkCard(link model.Link) {
 templ SearchBar() {
 	<form
 		hx-post="/search"
-		hx-target="body"
 		hx-swap="none"
+		hx-sync="this:replace"
 		class="search-bar"
 	>
 		<select id="search-engine-select" name="engine" class="search-engine-select">

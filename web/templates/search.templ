@@ -13,13 +13,13 @@ templ SearchResultsPage(q string, results []model.SearchResult) {
 		<div class="page search-page-layout">
 			<div class="search-header">
 				<a href="/" class="search-back-link">
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<line x1="19" y1="12" x2="5" y2="12"></line>
 						<polyline points="12 19 5 12 12 5"></polyline>
 					</svg>
 					<span>HoleTab</span>
 				</a>
-				<form hx-post="/search" hx-target="body" hx-swap="none" class="search-bar">
+				<form hx-post="/search" hx-swap="none" hx-sync="this:replace" class="search-bar">
 					<select id="search-engine-select" name="engine" class="search-engine-select">
 						<option value="mixed">Mixed</option>
 						<option value="google">Google</option>
@@ -47,8 +47,8 @@ templ SearchResultsPage(q string, results []model.SearchResult) {
 templ SearchPage() {
 	<div class="search-container">
 		<form hx-post="/search"
-			  hx-target="body"
 			  hx-swap="none"
+			  hx-sync="this:replace"
 			  class="search-bar">
 			<select id="search-engine-select" name="engine" class="search-engine-select">
 				<option value="mixed">Mixed</option>
@@ -58,7 +58,7 @@ templ SearchPage() {
 				<option value="brave">Brave</option>
 			</select>
 			<div class="search-divider"></div>
-			<input type="text" name="q" placeholder="Rechercher..." required class="search-input" autocomplete="off" autofocus />
+			<input type="text" name="q" placeholder="Search the web…" required class="search-input" autocomplete="off" autofocus />
 			<button type="submit" class="search-submit">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<circle cx="11" cy="11" r="8"></circle>

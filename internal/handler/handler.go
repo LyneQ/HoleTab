@@ -1,12 +1,16 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
 	"go.etcd.io/bbolt"
 
 	"holetab/internal/bookmarks"
@@ -282,7 +286,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("HX-Redirect", searchURL)
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
 
 // renderGrid is a helper that fetches the current link list and renders the
@@ -349,7 +353,7 @@ func (h *Handler) Import(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect back to home to see the changes
 	w.Header().Set("HX-Redirect", "/")
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
 
 // ResetLinks handles POST /reset — erases all links from the DB.
@@ -384,25 +388,61 @@ func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
 	}
 	info, err := weather.GetWeather(parts[0], parts[1])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Weather error: %v", err)
+
+		// Try to serve from cache
+		cached, _ := db.GetConfig(h.DB, "weather_cache")
+		if cached != "" {
+			var cachedInfo weather.WeatherInfo
+			if err := json.Unmarshal([]byte(cached), &cachedInfo); err == nil {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				if err := widget.WeatherWidget(&cachedInfo).Render(r.Context(), w); err == nil {
+					return
+				}
+			}
+		}
+
+		// Don't return 500
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		if err := widget.WeatherError(err.Error()).Render(r.Context(), w); err != nil {
+			// fallback
+			fmt.Fprintf(w, "<div class=\"weather-widget error\">⚠️ Error</div>")
+		}
 		return
+	}
+
+	// Cache successful response
+	if data, err := json.Marshal(info); err == nil {
+		_ = db.SetConfig(h.DB, "weather_cache", string(data))
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := widget.WeatherWidget(info).Render(r.Context(), w); err != nil {
-		http.Error(w, "render error", http.StatusInternalServerError)
+		// Even if render fails, we've already set 200 (implied if not set, but better to be safe)
+		// but since Render might fail after writing some content, we just log it
+		return
 	}
 }
 
 // UpdateWeatherConfig handles PUT /widgets/weather/config — saves the lat/lon to the DB.
 func (h *Handler) UpdateWeatherConfig(w http.ResponseWriter, r *http.Request) {
-	lat := r.FormValue("lat")
-	lon := r.FormValue("lon")
-	if lat == "" || lon == "" {
+	latStr := r.FormValue("lat")
+	lonStr := r.FormValue("lon")
+	if latStr == "" || lonStr == "" {
 		http.Error(w, "lat and lon are required", http.StatusBadRequest)
 		return
 	}
-	err := db.SetConfig(h.DB, "weather_location", lat+","+lon)
+
+	lat, errLat := strconv.ParseFloat(latStr, 64)
+	lon, errLon := strconv.ParseFloat(lonStr, 64)
+
+	if errLat != nil || errLon != nil || lat < -90 || lat > 90 || lon < -180 || lon > 180 {
+		http.Error(w, "invalid coordinates", http.StatusBadRequest)
+		return
+	}
+
+	err := db.SetConfig(h.DB, "weather_location", fmt.Sprintf("%.4f,%.4f", lat, lon))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

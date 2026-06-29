@@ -307,7 +307,8 @@ function enableDragAndDrop() {
       htmx.ajax('PUT', '/links/reorder', {
         target: '#link-grid',
         swap: 'outerHTML',
-        values: { ids: ids.join(',') }
+        values: { ids: ids.join(',') },
+        sync: 'this:replace'
       });
     }
   });

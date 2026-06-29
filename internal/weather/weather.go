@@ -3,6 +3,7 @@ package weather
 import (
 	"encoding/json"
 	"fmt"
+	"holetab/internal/utils"
 	"net/http"
 )
 
@@ -23,7 +24,7 @@ type WeatherInfo struct {
 
 func GetWeather(lat, lon string) (*WeatherInfo, error) {
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,weathercode,windspeed_10m&wind_speed_unit=kmh", lat, lon)
-	resp, err := http.Get(url)
+	resp, err := utils.Fetch(url)
 	if err != nil {
 		return nil, err
 	}

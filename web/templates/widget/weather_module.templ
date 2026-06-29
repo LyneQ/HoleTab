@@ -14,3 +14,7 @@ templ WeatherWidget(info *weather.WeatherInfo) {
 		</div>
 	}
 }
+
+templ WeatherError(err string) {
+	<div class="weather-widget error" title={ err }>⚠️ Error</div>
+}
