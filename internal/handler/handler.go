@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,8 +11,6 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-
-	"go.etcd.io/bbolt"
 
 	"holetab/internal/bookmarks"
 	"holetab/internal/config"
@@ -26,13 +25,13 @@ import (
 
 // Handler holds shared dependencies for all HTTP handlers.
 type Handler struct {
-	DB      *bbolt.DB
+	DB      *sql.DB
 	Config  *config.Config
 	DevMode bool
 }
 
 // New returns a configured chi router wired to all application routes.
-func New(database *bbolt.DB, cfg *config.Config, devMode bool) http.Handler {
+func New(database *sql.DB, cfg *config.Config, devMode bool) http.Handler {
 	h := &Handler{
 		DB:      database,
 		Config:  cfg,

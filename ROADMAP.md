@@ -31,4 +31,4 @@ A lightweight, dependency-free (no Node.js), and extremely fast self-hosted new-
 - [x] Embedded static assets and templates.
 - [x] Systemd integration via `install.sh`.
 - [x] Automatic favicon resolution.
-- [x] Persistent storage using `bbolt`.
+- [x] Persistent storage using `sqlite`.

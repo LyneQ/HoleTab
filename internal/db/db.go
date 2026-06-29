@@ -1,27 +1,20 @@
 package db
 
 import (
-	"encoding/binary"
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
-	"go.etcd.io/bbolt"
+	_ "modernc.org/sqlite"
 
 	"holetab/internal/model"
 )
 
-const (
-	bucketLinks  = "links"
-	bucketConfig = "config"
-)
-
-// Open initialises the bbolt database at the given path, creating it if absent.
+// Open initialises the sqlite database at the given path, creating it if absent.
 // The caller is responsible for calling db.Close().
-func Open(path string) (*bbolt.DB, error) {
+func Open(path string) (*sql.DB, error) {
 
 	if strings.HasPrefix(path, "~/") {
 		home, err := os.UserHomeDir()
@@ -34,228 +27,203 @@ func Open(path string) (*bbolt.DB, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return nil, fmt.Errorf("create db dir: %w", err)
 	}
-	db, err := bbolt.Open(path, 0600, nil)
+
+	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
 
-	// Ensure buckets exist.
-	err = db.Update(func(tx *bbolt.Tx) error {
-		if _, err := tx.CreateBucketIfNotExists([]byte(bucketLinks)); err != nil {
-			return err
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(bucketConfig)); err != nil {
-			return err
-		}
-		return nil
-	})
+	// Create tables if they don't exist.
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS links (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			type TEXT,
+			name TEXT,
+			href TEXT,
+			img TEXT,
+			position INTEGER
+		);
+		CREATE TABLE IF NOT EXISTS config (
+			key TEXT PRIMARY KEY,
+			value TEXT
+		);
+	`)
 	if err != nil {
-		return nil, fmt.Errorf("create bucket: %w", err)
+		return nil, fmt.Errorf("create tables: %w", err)
 	}
 
 	return db, nil
 }
 
 // GetAllLinks returns all links sorted ascending by Position.
-func GetAllLinks(db *bbolt.DB) ([]model.Link, error) {
-	var links []model.Link
-
-	err := db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketLinks))
-		return b.ForEach(func(_, v []byte) error {
-			var l model.Link
-			if err := json.Unmarshal(v, &l); err != nil {
-				return err
-			}
-			links = append(links, l)
-			return nil
-		})
-	})
+func GetAllLinks(db *sql.DB) ([]model.Link, error) {
+	rows, err := db.Query("SELECT id, type, name, href, img, position FROM links ORDER BY position ASC")
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	sort.Slice(links, func(i, j int) bool {
-		return links[i].Position < links[j].Position
-	})
+	var links []model.Link
+	for rows.Next() {
+		var l model.Link
+		if err := rows.Scan(&l.ID, &l.Type, &l.Name, &l.Href, &l.Img, &l.Position); err != nil {
+			return nil, err
+		}
+		links = append(links, l)
+	}
 	return links, nil
 }
 
 // AddLinks inserts multiple links.
-func AddLinks(db *bbolt.DB, links []model.Link) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketLinks))
-		nextPos := b.Stats().KeyN
+func AddLinks(db *sql.DB, links []model.Link) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-		for _, link := range links {
-			id, err := b.NextSequence()
-			if err != nil {
-				return err
-			}
-			link.ID = id
-			link.Position = nextPos
-			nextPos++
+	var nextPos int
+	err = tx.QueryRow("SELECT COALESCE(MAX(position), -1) + 1 FROM links").Scan(&nextPos)
+	if err != nil {
+		return err
+	}
 
-			v, err := json.Marshal(link)
-			if err != nil {
-				return err
-			}
-			if err := b.Put(itob(id), v); err != nil {
-				return err
-			}
+	for _, link := range links {
+		res, err := tx.Exec("INSERT INTO links (type, name, href, img, position) VALUES (?, ?, ?, ?, ?)",
+			link.Type, link.Name, link.Href, link.Img, nextPos)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+		id, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+		_ = id // We don't strictly need to return it here based on current API but good to know
+		nextPos++
+	}
+
+	return tx.Commit()
 }
 
 // AddLink inserts a new link.
-func AddLink(db *bbolt.DB, link model.Link) error {
+func AddLink(db *sql.DB, link model.Link) error {
 	return AddLinks(db, []model.Link{link})
 }
 
 // UpdateLink overwrites an existing link identified by link.ID.
-func UpdateLink(db *bbolt.DB, link model.Link) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketLinks))
-		v, err := json.Marshal(link)
-		if err != nil {
-			return err
-		}
-		return b.Put(itob(link.ID), v)
-	})
+func UpdateLink(db *sql.DB, link model.Link) error {
+	_, err := db.Exec("UPDATE links SET type = ?, name = ?, href = ?, img = ?, position = ? WHERE id = ?",
+		link.Type, link.Name, link.Href, link.Img, link.Position, link.ID)
+	return err
 }
 
 // DeleteLink removes the link with the given id and recompacts positions
 // so there are no gaps.
-func DeleteLink(db *bbolt.DB, id uint64) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketLinks))
+func DeleteLink(db *sql.DB, id uint64) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-		if err := b.Delete(itob(id)); err != nil {
-			return err
-		}
+	_, err = tx.Exec("DELETE FROM links WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
 
-		// Recompact positions to remove gaps.
-		return recompactPositions(b)
-	})
+	// Recompact positions.
+	if err := recompactPositions(tx); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // MoveLink swaps the position of link `id` with its neighbour in direction dir
 // ("up" = lower position index, "down" = higher).
-func MoveLink(db *bbolt.DB, id uint64, dir string) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketLinks))
+func MoveLink(db *sql.DB, id uint64, dir string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-		// Load all links to find neighbours.
-		var links []model.Link
-		if err := b.ForEach(func(_, v []byte) error {
-			var l model.Link
-			if err := json.Unmarshal(v, &l); err != nil {
-				return err
-			}
-			links = append(links, l)
-			return nil
-		}); err != nil {
-			return err
-		}
+	var currentPos int
+	err = tx.QueryRow("SELECT position FROM links WHERE id = ?", id).Scan(&currentPos)
+	if err != nil {
+		return err
+	}
 
-		sort.Slice(links, func(i, j int) bool { return links[i].Position < links[j].Position })
+	var swapID uint64
+	var swapPos int
+	var query string
+	if dir == "up" {
+		query = "SELECT id, position FROM links WHERE position < ? ORDER BY position DESC LIMIT 1"
+	} else if dir == "down" {
+		query = "SELECT id, position FROM links WHERE position > ? ORDER BY position ASC LIMIT 1"
+	} else {
+		return fmt.Errorf("invalid direction %q", dir)
+	}
 
-		// Find the index of the target link.
-		idx := -1
-		for i, l := range links {
-			if l.ID == id {
-				idx = i
-				break
-			}
-		}
-		if idx == -1 {
-			return fmt.Errorf("link %d not found", id)
-		}
+	err = tx.QueryRow(query, currentPos).Scan(&swapID, &swapPos)
+	if err == sql.ErrNoRows {
+		return nil // Nothing to move
+	}
+	if err != nil {
+		return err
+	}
 
-		var swapIdx int
-		switch dir {
-		case "up":
-			if idx == 0 {
-				return nil // already first
-			}
-			swapIdx = idx - 1
-		case "down":
-			if idx == len(links)-1 {
-				return nil // already last
-			}
-			swapIdx = idx + 1
-		default:
-			return fmt.Errorf("invalid direction %q", dir)
-		}
+	_, err = tx.Exec("UPDATE links SET position = ? WHERE id = ?", swapPos, id)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("UPDATE links SET position = ? WHERE id = ?", currentPos, swapID)
+	if err != nil {
+		return err
+	}
 
-		// Swap positions.
-		links[idx].Position, links[swapIdx].Position = links[swapIdx].Position, links[idx].Position
-
-		// Persist both.
-		for _, l := range []model.Link{links[idx], links[swapIdx]} {
-			v, err := json.Marshal(l)
-			if err != nil {
-				return err
-			}
-			if err := b.Put(itob(l.ID), v); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return tx.Commit()
 }
 
 // ReorderLinks updates the positions of all links based on the provided ID order.
-func ReorderLinks(db *bbolt.DB, ids []uint64) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketLinks))
-		for i, id := range ids {
-			v := b.Get(itob(id))
-			if v == nil {
-				continue // or return error? better skip if not found
-			}
-			var l model.Link
-			if err := json.Unmarshal(v, &l); err != nil {
-				return err
-			}
-			l.Position = i
-			newV, err := json.Marshal(l)
-			if err != nil {
-				return err
-			}
-			if err := b.Put(itob(id), newV); err != nil {
-				return err
-			}
+func ReorderLinks(db *sql.DB, ids []uint64) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for i, id := range ids {
+		_, err := tx.Exec("UPDATE links SET position = ? WHERE id = ?", i, id)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+
+	return tx.Commit()
 }
 
 // recompactPositions reassigns sequential 0-based positions to all links
 // in their current order. Must be called inside an Update transaction.
-func recompactPositions(b *bbolt.Bucket) error {
-	var links []model.Link
-	if err := b.ForEach(func(_, v []byte) error {
-		var l model.Link
-		if err := json.Unmarshal(v, &l); err != nil {
-			return err
-		}
-		links = append(links, l)
-		return nil
-	}); err != nil {
+func recompactPositions(tx *sql.Tx) error {
+	rows, err := tx.Query("SELECT id FROM links ORDER BY position ASC")
+	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
-	sort.Slice(links, func(i, j int) bool { return links[i].Position < links[j].Position })
-
-	for i := range links {
-		links[i].Position = i
-		v, err := json.Marshal(links[i])
-		if err != nil {
+	var ids []uint64
+	for rows.Next() {
+		var id uint64
+		if err := rows.Scan(&id); err != nil {
 			return err
 		}
-		if err := b.Put(itob(links[i].ID), v); err != nil {
+		ids = append(ids, id)
+	}
+
+	for i, id := range ids {
+		_, err := tx.Exec("UPDATE links SET position = ? WHERE id = ?", i, id)
+		if err != nil {
 			return err
 		}
 	}
@@ -263,47 +231,23 @@ func recompactPositions(b *bbolt.Bucket) error {
 }
 
 // ResetLinks deletes all links from the database.
-func ResetLinks(db *bbolt.DB) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		if err := tx.DeleteBucket([]byte(bucketLinks)); err != nil {
-			return err
-		}
-		_, err := tx.CreateBucketIfNotExists([]byte(bucketLinks))
-		return err
-	})
+func ResetLinks(db *sql.DB) error {
+	_, err := db.Exec("DELETE FROM links")
+	return err
 }
 
-// itob encodes a uint64 as an 8-byte big-endian slice (bbolt key ordering).
-func itob(v uint64) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, v)
-	return b
-}
-
-// GetConfig retrieves a string value from the config bucket.
-func GetConfig(db *bbolt.DB, key string) (string, error) {
+// GetConfig retrieves a string value from the config table.
+func GetConfig(db *sql.DB, key string) (string, error) {
 	var value string
-	err := db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucketConfig))
-		if b == nil {
-			return nil
-		}
-		v := b.Get([]byte(key))
-		if v != nil {
-			value = string(v)
-		}
-		return nil
-	})
+	err := db.QueryRow("SELECT value FROM config WHERE key = ?", key).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
 	return value, err
 }
 
-// SetConfig stores a string value in the config bucket.
-func SetConfig(db *bbolt.DB, key string, value string) error {
-	return db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(bucketConfig))
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(key), []byte(value))
-	})
+// SetConfig stores a string value in the config table.
+func SetConfig(db *sql.DB, key string, value string) error {
+	_, err := db.Exec("INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", key, value)
+	return err
 }

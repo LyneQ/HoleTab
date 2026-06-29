@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	// 2. Open bbolt database.
+	// 2. Open sqlite database.
 	database, err := db.Open(cfg.Database.Path)
 	if err != nil {
 		log.Fatalf("db: %v", err)

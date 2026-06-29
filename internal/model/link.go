@@ -1,6 +1,6 @@
 package model
 
-// Link represents a bookmark entry stored in bbolt.
+// Link represents a bookmark entry stored in sqlite.
 type Link struct {
 	ID       uint64 `json:"id"`
 	Type     string `json:"type"` // "link" or "separator"

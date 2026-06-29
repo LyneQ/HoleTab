@@ -63,7 +63,7 @@ Open `http://localhost:3654`.
 ```
 cmd/holetab/        — entry point
 internal/config/    — config loading
-internal/db/        — bbolt CRUD
+internal/db/        — sqlite CRUD
 internal/handler/   — HTTP handlers
 internal/favicon/   — favicon resolver
 internal/model/     — Link struct
