@@ -7,7 +7,7 @@ import (
 )
 
 // Index renders the full new-tab page wrapped in Layout.
-templ Index(links []model.Link, devMode bool, weatherEnabled bool, weatherLat, weatherLon string) {
+templ Index(user *model.User, links []model.Link, devMode bool, weatherEnabled bool, weatherLat, weatherLon string) {
 	@Layout("HoleTab") {
 		<div class="orb orb-1"></div>
 		<div class="orb orb-2"></div>
@@ -33,7 +33,9 @@ templ Index(links []model.Link, devMode bool, weatherEnabled bool, weatherLat, w
 		</button>
 		@AddForm()
 		@EditModal()
-		@SettingsModal(devMode, weatherEnabled, weatherLat, weatherLon)
+		@SettingsModal(user, devMode, weatherEnabled, weatherLat, weatherLon)
+		@LoginModal()
+		@RegisterModal()
 	}
 }
 
@@ -179,7 +181,7 @@ templ EditModal() {
 }
 
 // SettingsModal renders the settings panel with user preferences.
-templ SettingsModal(devMode bool, weatherEnabled bool, weatherLat, weatherLon string) {
+templ SettingsModal(user *model.User, devMode bool, weatherEnabled bool, weatherLat, weatherLon string) {
 	<div id="settings-modal" class="modal-backdrop">
 		<div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
 			<button class="modal-close" onclick="closeSettingsModal()" type="button" title="Close">
@@ -190,6 +192,23 @@ templ SettingsModal(devMode bool, weatherEnabled bool, weatherLat, weatherLon st
 			</button>
 			<h2 class="modal-title">Settings</h2>
 			<div class="settings-list">
+				<div class="setting-row auth-section">
+					if user == nil {
+						<div class="setting-info">
+							<span class="setting-label">Account</span>
+							<span class="setting-desc">Login or create an account to sync your bookmarks</span>
+						</div>
+						<div style="display: flex; gap: 0.5rem;">
+							<button class="btn-primary" onclick="openLoginModal()">Login</button>
+							<button class="btn-secondary" onclick="openRegisterModal()">Register</button>
+						</div>
+					} else {
+						<div class="setting-info">
+							<span class="setting-label">Connected as { user.Username }</span>
+						</div>
+						<button class="btn-secondary" hx-post="/logout" hx-target="body">Logout</button>
+					}
+				</div>
 				<div class="setting-row">
 					<div class="setting-info">
 						<span class="setting-label">Autofocus search bar</span>
@@ -240,7 +259,7 @@ templ SettingsModal(devMode bool, weatherEnabled bool, weatherLat, weatherLon st
 						<form hx-post="/import" hx-encoding="multipart/form-data" style="margin: 0;">
 							<label class="btn-secondary" style="display: inline-block; line-height: 2.5; cursor: pointer;">
 								Import
-								<input type="file" name="bookmarks" style="display: none;" onchange="this.form.requestSubmit()"/>
+								<input type="file" name="bookmarks" style="display: none;" onchange="this.form.requestSubmit()" accept=".json,.html,text/html,application/json"/>
 							</label>
 						</form>
 					</div>
@@ -330,6 +349,74 @@ templ AddForm() {
 					<button type="submit" class="btn-primary">Add link</button>
 				</div>
 			</form>
+		</div>
+	</div>
+}
+
+templ LoginForm(errorMessage string) {
+	<form
+		hx-post="/login"
+		hx-target="this"
+		hx-swap="outerHTML"
+		class="modal-form"
+	>
+		if errorMessage != "" {
+			<div class="auth-error">{ errorMessage }</div>
+		}
+		<input type="text" name="username" placeholder="Username" required class="modal-input"/>
+		<input type="password" name="password" placeholder="Password" required class="modal-input"/>
+		<div class="modal-actions">
+			<button type="button" class="btn-ghost" onclick="closeLoginModal()">Cancel</button>
+			<button type="submit" class="btn-primary">Login</button>
+		</div>
+	</form>
+}
+
+templ LoginModal() {
+	<div id="login-modal" class="modal-backdrop">
+		<div class="modal-card" role="dialog" aria-modal="true" aria-label="Login">
+			<button class="modal-close" onclick="closeLoginModal()" type="button" title="Close">
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			</button>
+			<h2 class="modal-title">Login</h2>
+			@LoginForm("")
+		</div>
+	</div>
+}
+
+templ RegisterForm(errorMessage string) {
+	<form
+		hx-post="/register"
+		hx-target="this"
+		hx-swap="outerHTML"
+		class="modal-form"
+	>
+		if errorMessage != "" {
+			<div class="auth-error">{ errorMessage }</div>
+		}
+		<input type="text" name="username" placeholder="Username" required class="modal-input"/>
+		<input type="password" name="password" placeholder="Password" required class="modal-input"/>
+		<div class="modal-actions">
+			<button type="button" class="btn-ghost" onclick="closeRegisterModal()">Cancel</button>
+			<button type="submit" class="btn-primary">Register</button>
+		</div>
+	</form>
+}
+
+templ RegisterModal() {
+	<div id="register-modal" class="modal-backdrop">
+		<div class="modal-card" role="dialog" aria-modal="true" aria-label="Register">
+			<button class="modal-close" onclick="closeRegisterModal()" type="button" title="Close">
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			</button>
+			<h2 class="modal-title">Register</h2>
+			@RegisterForm("")
 		</div>
 	</div>
 }

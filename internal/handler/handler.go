@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -40,9 +41,14 @@ func New(database *sql.DB, cfg *config.Config, devMode bool) http.Handler {
 
 	r := chi.NewRouter()
 
+	r.Use(h.AuthMiddleware)
+
 	r.Get("/", h.Index)
 	r.Get("/search", search.Handler)
 	r.Post("/search", h.Search)
+	r.Post("/register", h.Register)
+	r.Post("/login", h.Login)
+	r.Post("/logout", h.Logout)
 	r.Post("/links", h.AddLink)
 	r.Put("/links/{id}", h.UpdateLink)
 	r.Delete("/links/{id}", h.DeleteLink)
@@ -62,9 +68,42 @@ func New(database *sql.DB, cfg *config.Config, devMode bool) http.Handler {
 	return r
 }
 
+func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session")
+		if err == nil {
+			user, _ := db.GetUserByToken(h.DB, cookie.Value)
+			if user != nil {
+				ctx := context.WithValue(r.Context(), "user", user)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *Handler) currentUser(r *http.Request) *model.User {
+	u, _ := r.Context().Value("user").(*model.User)
+	return u
+}
+
+func (h *Handler) currentUserID(r *http.Request) uint64 {
+	if u := h.currentUser(r); u != nil {
+		return u.ID
+	}
+	return 0
+}
+
 // Index handles GET / — renders the full page with the current link list.
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
-	links, err := db.GetAllLinks(h.DB)
+	user := h.currentUser(r)
+	userID := uint64(0)
+	if user != nil {
+		userID = user.ID
+	}
+
+	links, err := db.GetAllLinks(h.DB, userID)
 	if err != nil {
 		http.Error(w, "failed to load links", http.StatusInternalServerError)
 		return
@@ -79,13 +118,116 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates.Index(links, h.DevMode, weatherEnabled, lat, lon).Render(r.Context(), w); err != nil {
+	if err := templates.Index(user, links, h.DevMode, weatherEnabled, lat, lon).Render(r.Context(), w); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
 
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.RegisterForm("Bad request").Render(r.Context(), w)
+		return
+	}
+
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	if username == "" || password == "" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.RegisterForm("Username and password are required").Render(r.Context(), w)
+		return
+	}
+
+	userID, err := db.CreateUser(h.DB, username, password)
+	if err != nil {
+		errorMessage := "Failed to create user"
+		if strings.Contains(err.Error(), "UNIQUE constraint failed: users.username") {
+			errorMessage = "Username already taken"
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.RegisterForm(errorMessage).Render(r.Context(), w)
+		return
+	}
+
+	token, err := db.CreateSession(h.DB, userID)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.RegisterForm("Failed to create session").Render(r.Context(), w)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    token,
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	w.Header().Set("HX-Redirect", "/")
+}
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.LoginForm("Bad request").Render(r.Context(), w)
+		return
+	}
+
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	user, err := db.AuthenticateUser(h.DB, username, password)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.LoginForm("Invalid username or password").Render(r.Context(), w)
+		return
+	}
+
+	token, err := db.CreateSession(h.DB, user.ID)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		templates.LoginForm("Failed to create session").Render(r.Context(), w)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    token,
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	w.Header().Set("HX-Redirect", "/")
+}
+
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session")
+	if err == nil {
+		_ = db.DeleteSession(h.DB, cookie.Value)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	w.Header().Set("HX-Redirect", "/")
+}
+
 // AddLink handles POST /links — inserts a new link and returns the updated grid fragment.
 func (h *Handler) AddLink(w http.ResponseWriter, r *http.Request) {
+	userID := h.currentUserID(r)
+	if userID == 0 {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
@@ -117,7 +259,7 @@ func (h *Handler) AddLink(w http.ResponseWriter, r *http.Request) {
 		Img:  img,
 	}
 
-	if err := db.AddLink(h.DB, link); err != nil {
+	if err := db.AddLink(h.DB, userID, link); err != nil {
 		http.Error(w, "failed to add link", http.StatusInternalServerError)
 		return
 	}
@@ -171,19 +313,21 @@ func (h *Handler) UpdateLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Preserve the existing position by loading the old record first.
-	existing, err := db.GetAllLinks(h.DB)
+	userID := h.currentUserID(r)
+	existing, err := db.GetAllLinks(h.DB, userID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	for _, l := range existing {
-		if l.ID == id {
-			link.Position = l.Position
+	for _, e := range existing {
+		if e.ID == id {
+			link.Position = e.Position
+			link.Type = e.Type
 			break
 		}
 	}
 
-	if err := db.UpdateLink(h.DB, link); err != nil {
+	if err := db.UpdateLink(h.DB, userID, link); err != nil {
 		http.Error(w, "failed to update link", http.StatusInternalServerError)
 		return
 	}
@@ -191,7 +335,8 @@ func (h *Handler) UpdateLink(w http.ResponseWriter, r *http.Request) {
 	h.renderGrid(w, r)
 }
 
-// DeleteLink handles DELETE /links/{id} — removes a link and returns the updated grid fragment.
+// DeleteLink removes the link with the given id and recompacts positions
+// so there are no gaps.
 func (h *Handler) DeleteLink(w http.ResponseWriter, r *http.Request) {
 	id, err := parseID(r)
 	if err != nil {
@@ -199,7 +344,8 @@ func (h *Handler) DeleteLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.DeleteLink(h.DB, id); err != nil {
+	userID := h.currentUserID(r)
+	if err := db.DeleteLink(h.DB, userID, id); err != nil {
 		http.Error(w, "failed to delete link", http.StatusInternalServerError)
 		return
 	}
@@ -207,7 +353,7 @@ func (h *Handler) DeleteLink(w http.ResponseWriter, r *http.Request) {
 	h.renderGrid(w, r)
 }
 
-// MoveLink handles GET /links/{id}/move?dir=up|down — reorders a link and returns the updated grid.
+// MoveLink handles GET /links/{id}/move?dir=up|down — swaps the link with its neighbor.
 func (h *Handler) MoveLink(w http.ResponseWriter, r *http.Request) {
 	id, err := parseID(r)
 	if err != nil {
@@ -215,13 +361,9 @@ func (h *Handler) MoveLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := h.currentUserID(r)
 	dir := r.URL.Query().Get("dir")
-	if dir != "up" && dir != "down" {
-		http.Error(w, "dir must be up or down", http.StatusBadRequest)
-		return
-	}
-
-	if err := db.MoveLink(h.DB, id, dir); err != nil {
+	if err := db.MoveLink(h.DB, userID, id, dir); err != nil {
 		http.Error(w, "failed to move link", http.StatusInternalServerError)
 		return
 	}
@@ -229,71 +371,64 @@ func (h *Handler) MoveLink(w http.ResponseWriter, r *http.Request) {
 	h.renderGrid(w, r)
 }
 
-// ReorderLinks handles PUT /links/reorder — reorders multiple links.
+// ReorderLinks handles PUT /links/reorder — sets the position of all links.
 func (h *Handler) ReorderLinks(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	idsStr := r.Form["ids"]
-	if len(idsStr) == 1 && strings.Contains(idsStr[0], ",") {
-		idsStr = strings.Split(idsStr[0], ",")
-	}
-
+	idsStr := r.FormValue("ids")
 	var ids []uint64
-	for _, s := range idsStr {
-		id, err := strconv.ParseUint(s, 10, 64)
-		if err != nil {
+	for _, s := range strings.Split(idsStr, ",") {
+		if s == "" {
 			continue
 		}
+		id, _ := strconv.ParseUint(s, 10, 64)
 		ids = append(ids, id)
 	}
 
-	if err := db.ReorderLinks(h.DB, ids); err != nil {
-		http.Error(w, "failed to reorder", http.StatusInternalServerError)
+	userID := h.currentUserID(r)
+	if err := db.ReorderLinks(h.DB, userID, ids); err != nil {
+		http.Error(w, "failed to reorder links", http.StatusInternalServerError)
 		return
 	}
 
 	h.renderGrid(w, r)
 }
 
-// Search handles POST /search — builds the engine search URL and redirects via HX-Redirect.
+// Search handles POST /search — redirects to the chosen search engine.
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	q := url.QueryEscape(r.FormValue("q"))
-
-	var searchURL string
+	q := r.FormValue("q")
 	engine := r.FormValue("engine")
-	if engine == "mixed" {
-		searchURL = "/search?q=" + q
-	} else {
-		switch engine {
-		case "duckduckgo":
-			searchURL = "https://duckduckgo.com/?q=" + q
-		case "bing":
-			searchURL = "https://www.bing.com/search?q=" + q
-		case "brave":
-			searchURL = "https://search.brave.com/search?q=" + q
-		default:
-			searchURL = "https://www.google.com/search?q=" + q
-		}
+
+	var target string
+	switch engine {
+	case "google":
+		target = "https://www.google.com/search?q=" + url.QueryEscape(q)
+	case "duckduckgo":
+		target = "https://duckduckgo.com/?q=" + url.QueryEscape(q)
+	case "bing":
+		target = "https://www.bing.com/search?q=" + url.QueryEscape(q)
+	case "brave":
+		target = "https://search.brave.com/search?q=" + url.QueryEscape(q)
+	default:
+		target = "https://www.google.com/search?q=" + url.QueryEscape(q)
 	}
 
-	w.Header().Set("HX-Redirect", searchURL)
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("HX-Redirect", target)
 }
 
-// renderGrid is a helper that fetches the current link list and renders the
-// grid fragment — used as the HTMX swap target for all mutating operations.
 func (h *Handler) renderGrid(w http.ResponseWriter, r *http.Request) {
-	links, err := db.GetAllLinks(h.DB)
+	userID := h.currentUserID(r)
+	links, err := db.GetAllLinks(h.DB, userID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		http.Error(w, "failed to load links", http.StatusInternalServerError)
 		return
 	}
 
@@ -303,171 +438,128 @@ func (h *Handler) renderGrid(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// parseID extracts and validates the {id} URL parameter.
 func parseID(r *http.Request) (uint64, error) {
 	return strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
 }
 
-// Export handles GET /export — triggers a download of the bookmarks in Netscape format.
+// Export handles GET /export — returns a JSON of all bookmarks.
 func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
-	links, err := db.GetAllLinks(h.DB)
+	userID := h.currentUserID(r)
+	links, err := db.GetAllLinks(h.DB, userID)
 	if err != nil {
-		http.Error(w, "failed to load links", http.StatusInternalServerError)
+		http.Error(w, "export failed", http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Disposition", `attachment; filename="bookmarks.html"`)
-
-	if err := bookmarks.Export(w, links); err != nil {
-		http.Error(w, "export error", http.StatusInternalServerError)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"holetab-backup.json\"")
+	json.NewEncoder(w).Encode(links)
 }
 
-// Import handles POST /import — parses the uploaded file and adds new bookmarks.
+// Import handles POST /import — replaces all bookmarks with those from a file.
 func (h *Handler) Import(w http.ResponseWriter, r *http.Request) {
-	// 10 MB max
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
+	userID := h.currentUserID(r)
+	if userID == 0 {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	file, _, err := r.FormFile("bookmarks")
+	file, header, err := r.FormFile("bookmarks")
 	if err != nil {
-		http.Error(w, "failed to get file", http.StatusBadRequest)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
-	links, err := bookmarks.Import(file)
-	if err != nil {
-		http.Error(w, "import error", http.StatusInternalServerError)
+	var links []model.Link
+	// Try to detect format based on content type or extension
+	isJSON := strings.HasSuffix(strings.ToLower(header.Filename), ".json") ||
+		header.Header.Get("Content-Type") == "application/json"
+
+	if isJSON {
+		if err := json.NewDecoder(file).Decode(&links); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// Default to HTML bookmark format (Netscape)
+		links, err = bookmarks.Import(file)
+		if err != nil {
+			http.Error(w, "invalid bookmark file", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if len(links) == 0 {
+		http.Error(w, "no bookmarks found in file", http.StatusBadRequest)
 		return
 	}
 
-	if err := db.AddLinks(h.DB, links); err != nil {
-		http.Error(w, "failed to save links", http.StatusInternalServerError)
+	if err := db.ResetLinks(h.DB, userID); err != nil {
+		http.Error(w, "import failed (reset)", http.StatusInternalServerError)
+		return
+	}
+	if err := db.AddLinks(h.DB, userID, links); err != nil {
+		http.Error(w, "import failed (add)", http.StatusInternalServerError)
 		return
 	}
 
-	// Redirect back to home to see the changes
 	w.Header().Set("HX-Redirect", "/")
-	w.WriteHeader(http.StatusOK)
 }
 
-// ResetLinks handles POST /reset — erases all links from the DB.
+// ResetLinks handles POST /reset — deletes all links.
 func (h *Handler) ResetLinks(w http.ResponseWriter, r *http.Request) {
-	if !h.DevMode {
-		http.Error(w, "forbidden", http.StatusForbidden)
+	userID := h.currentUserID(r)
+	if err := db.ResetLinks(h.DB, userID); err != nil {
+		http.Error(w, "reset failed", http.StatusInternalServerError)
 		return
 	}
-
-	if err := db.ResetLinks(h.DB); err != nil {
-		http.Error(w, "failed to reset links", http.StatusInternalServerError)
-		return
-	}
-
 	h.renderGrid(w, r)
 }
 
-// GetWeather handles GET /widgets/weather — fetches and renders the weather widget.
 func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
-	enabled, _ := db.GetConfig(h.DB, "weather_enabled")
-	if enabled != "true" {
-		return
-	}
+	lat, _ := db.GetConfig(h.DB, "weather_lat")
+	lon, _ := db.GetConfig(h.DB, "weather_lon")
 
-	location, _ := db.GetConfig(h.DB, "weather_location")
-	if location == "" {
-		return
-	}
-	parts := strings.Split(location, ",")
-	if len(parts) != 2 {
-		return
-	}
-	info, err := weather.GetWeather(parts[0], parts[1])
-	if err != nil {
-		log.Printf("Weather error: %v", err)
-
-		// Try to serve from cache
-		cached, _ := db.GetConfig(h.DB, "weather_cache")
-		if cached != "" {
-			var cachedInfo weather.WeatherInfo
-			if err := json.Unmarshal([]byte(cached), &cachedInfo); err == nil {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				if err := widget.WeatherWidget(&cachedInfo).Render(r.Context(), w); err == nil {
-					return
-				}
-			}
-		}
-
-		// Don't return 500
+	if lat == "" || lon == "" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		if err := widget.WeatherError(err.Error()).Render(r.Context(), w); err != nil {
-			// fallback
-			fmt.Fprintf(w, "<div class=\"weather-widget error\">⚠️ Error</div>")
-		}
+		_ = widget.WeatherWidget(nil).Render(r.Context(), w)
 		return
 	}
 
-	// Cache successful response
-	if data, err := json.Marshal(info); err == nil {
-		_ = db.SetConfig(h.DB, "weather_cache", string(data))
+	wData, err := weather.GetWeather(lat, lon)
+	if err != nil {
+		log.Printf("weather error: %v", err)
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := widget.WeatherWidget(info).Render(r.Context(), w); err != nil {
-		// Even if render fails, we've already set 200 (implied if not set, but better to be safe)
-		// but since Render might fail after writing some content, we just log it
-		return
-	}
+	_ = widget.WeatherWidget(wData).Render(r.Context(), w)
 }
 
-// UpdateWeatherConfig handles PUT /widgets/weather/config — saves the lat/lon to the DB.
 func (h *Handler) UpdateWeatherConfig(w http.ResponseWriter, r *http.Request) {
-	latStr := r.FormValue("lat")
-	lonStr := r.FormValue("lon")
-	if latStr == "" || lonStr == "" {
-		http.Error(w, "lat and lon are required", http.StatusBadRequest)
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	lat, errLat := strconv.ParseFloat(latStr, 64)
-	lon, errLon := strconv.ParseFloat(lonStr, 64)
+	lat := r.FormValue("lat")
+	lon := r.FormValue("lon")
 
-	if errLat != nil || errLon != nil || lat < -90 || lat > 90 || lon < -180 || lon > 180 {
-		http.Error(w, "invalid coordinates", http.StatusBadRequest)
-		return
-	}
+	_ = db.SetConfig(h.DB, "weather_location", lat+","+lon)
+	_ = db.SetConfig(h.DB, "weather_enabled", "true")
 
-	err := db.SetConfig(h.DB, "weather_location", fmt.Sprintf("%.4f,%.4f", lat, lon))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	w.Header().Set("HX-Trigger", "load-weather")
 	w.WriteHeader(http.StatusOK)
 }
 
-// ToggleWeather handles PUT /widgets/weather/toggle — enables or disables the weather widget.
 func (h *Handler) ToggleWeather(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	// For a checkbox, HTMX sends nothing if unchecked, and "on" if checked (by default).
-	// But we can also check if the key exists.
-	enabled := "false"
-	if r.FormValue("enabled") == "on" || r.Form.Has("enabled") {
-		enabled = "true"
-	}
-
-	if err := db.SetConfig(h.DB, "weather_enabled", enabled); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	enabled := r.FormValue("enabled") == "on"
+	_ = db.SetConfig(h.DB, "weather_enabled", strconv.FormatBool(enabled))
 
 	w.Header().Set("HX-Refresh", "true")
 	w.WriteHeader(http.StatusOK)

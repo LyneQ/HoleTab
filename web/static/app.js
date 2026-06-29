@@ -39,12 +39,36 @@ function closeAddModal() {
   document.getElementById('add-modal').classList.remove('open');
 }
 
+/* ── Login modal ─────────────────────────────────────── */
+function openLoginModal() {
+  document.getElementById('login-modal').classList.add('open');
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.remove('open');
+}
+
+/* ── Register modal ──────────────────────────────────── */
+function openRegisterModal() {
+  document.getElementById('register-modal').classList.add('open');
+}
+
+function closeRegisterModal() {
+  document.getElementById('register-modal').classList.remove('open');
+}
+
 // Close modals when clicking their own backdrop.
 document.getElementById('add-modal').addEventListener('click', function (e) {
   if (e.target === this) closeAddModal();
 });
 document.getElementById('edit-modal').addEventListener('click', function (e) {
   if (e.target === this) closeEditModal();
+});
+document.getElementById('login-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeLoginModal();
+});
+document.getElementById('register-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeRegisterModal();
 });
 
 /* ── Edit-link modal ────────────────────────────────────── */
